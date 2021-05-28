@@ -1,0 +1,13 @@
+.container {
+    display: flex;
+}
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+  }
+td:hover {
+    cursor: pointer;
+}
+.selected-cell {
+    background: #E7F0FD;
+}
