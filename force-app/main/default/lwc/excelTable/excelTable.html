@@ -8,13 +8,30 @@
         </tr>
         <template for:each={data} for:item="item" for:index="index"> 
           <tr key={item.Id}>
-            <td data-row={index} data-column="1" onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>{index} -1</td>
-            <td data-row={index} data-column="2" onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>{index} - 2</td>
-            <td data-row={index} data-column="3" onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>{index} - 3</td>
-            <td data-row={index} data-column="4" onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>{index} - 4</td>
+            <td data-row={index} data-column="1" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown} oncopy={handleCopy}>
+              <input type='text' value='hihihih' ondblclick={handleDoubleClick} onfocusout={handleFocusOut} disabled/>
+            </td>
+            <td data-row={index} data-column="2" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown} oncopy={handleCopy}>
+              {index} - 2
+            </td>
+            <td data-row={index} data-column="3" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown} oncopy={handleCopy}>
+              {index} - 3
+            </td>
+            <td data-row={index} data-column="4" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown} oncopy={handleCopy}>
+              {index} - 4
+            </td>
           </tr>
         </template>
 
       </table> 
+
+      <div id="context-menu" class="menu-context">
+          <lightning-vertical-navigation onselect={handleContextMenuAction} compact>
+            <lightning-vertical-navigation-section >
+                <lightning-vertical-navigation-item-icon icon-name="utility:user" label="Copy" name="copy"></lightning-vertical-navigation-item-icon>
+                <lightning-vertical-navigation-item-icon icon-name="utility:user" label="Paste" name="paste" if:true={hasCopiedItems}></lightning-vertical-navigation-item-icon>
+            </lightning-vertical-navigation-section>
+        </lightning-vertical-navigation>
+      </div>
 
 </template>
