@@ -43,6 +43,7 @@ const CONTEXT_MENU_ACTIONS = {
 const CELL_SELECTED_FROM_RANGE = 'selected-cell';
 const CELL_SELECTED = 'selected-cell-border';
 const CELL_COPIED = 'selected-copied-cell';
+const COPY_BORDER_CLASS = 'copy-border';
 
 export default class ExcelTable extends LightningElement {
 
@@ -248,14 +249,18 @@ export default class ExcelTable extends LightningElement {
     applyCopyAction() {
         this.hideContextMenu();
         this.clearPreviouslyCopiedCellsHtml();
-        this.markCellsAsCopiedWithCssClassAndDatasetProperty();
+
         this.setItemToCopy();
+
+        this.markCellsAsCopiedWithCssClassAndDatasetProperty();
+        this.addDashedBorderToCopiedArea();
+        
         this.showPasteOptionInContextMenu();
     }
 
     markCellsAsCopiedWithCssClassAndDatasetProperty() {
         this.addCssClassAndDatasetToCellsBetweenRange(
-            this.getSelectedAreaNormalizedCoordinates(), 
+            this.getCopiedAreaNormalizedCoordinates(), 
             CELL_COPIED, 
             'copied'
         );
@@ -269,6 +274,38 @@ export default class ExcelTable extends LightningElement {
         this.removeCssClassAndDatasetFromCellsBetweenRange(CELL_COPIED, 'copied');
     }
 
+    addDashedBorderToCopiedArea() {
+        let copyCoordinates = this.getCopiedAreaNormalizedCoordinates();
+        let startCell = this.getCellByQuerySelectorWithDatasetAttributes(copyCoordinates.fromX, copyCoordinates.fromY);
+        
+        let width = 0;
+        let height = 0;
+
+        let calculateCopiedAreaSize = (x, y, xIndex, yIndex) => {
+            if (xIndex === 0) { //only size for first row
+                width += this.getCellByQuerySelectorWithDatasetAttributes(x, y).offsetWidth;
+            }
+            if (yIndex === 0) { //only size for first colum
+                height += this.getCellByQuerySelectorWithDatasetAttributes(x, y).offsetHeight;
+            }
+        };
+
+        this.itterateThroughCellsInRangeAndApplyLogic(
+            copyCoordinates, 
+            calculateCopiedAreaSize.bind(this)
+        );
+
+        
+        let border = this.template.querySelector(`.${COPY_BORDER_CLASS}`);
+
+        border.classList.remove('slds-hide');
+
+        border.style.setProperty("top", `${startCell.offsetTop}px`);
+        border.style.setProperty("left", `${startCell.offsetLeft}px`);
+        border.style.setProperty("width", `${width}px`);
+        border.style.setProperty("height", `${height}px`);
+    }
+
     // Paste
 
     applyPasteAction() {
@@ -279,7 +316,7 @@ export default class ExcelTable extends LightningElement {
         let selectedColumnsSize = transformedCopyCoordinates.toY - transformedCopyCoordinates.fromY;
 
         let logicToApply = (x, y, row, column) => {
-            this.getCellByQuerySelector(x, y).firstChild.value = values[row][column];
+            this.getCellByQuerySelectorWithDatasetAttributes(x, y).firstChild.value = values[row][column];
         };
 
         this.itterateThroughCellsInRangeAndApplyLogic(
@@ -299,8 +336,14 @@ export default class ExcelTable extends LightningElement {
             toY: this.selectedCellCoordinates.y + selectedColumnsSize
         });
 
+        this.selectedAreaCoordinates.fromX = this.selectedCellCoordinates.x;
+        this.selectedAreaCoordinates.toX = this.selectedCellCoordinates.x + selectedRowsSize;
+        this.selectedAreaCoordinates.fromY = this.selectedCellCoordinates.y;
+        this.selectedAreaCoordinates.toY = this.selectedCellCoordinates.y + selectedColumnsSize;
+
         this.hideContextMenu();
         this.clearPreviouslyCopiedCellsHtml();
+        this.template.querySelector(`.${COPY_BORDER_CLASS}`).classList.add('slds-hide');
     }
 
     // General
@@ -313,7 +356,7 @@ export default class ExcelTable extends LightningElement {
                 values[xIndex] = [];
             }
             values[xIndex].push(
-                this.getCellByQuerySelector(x, y).firstChild.value
+                this.getCellByQuerySelectorWithDatasetAttributes(x, y).firstChild.value
             );
         };
 
@@ -336,7 +379,7 @@ export default class ExcelTable extends LightningElement {
 
     addCssClassAndDatasetToCellsBetweenRange({ fromX, toX, fromY, toY }, cssClassToAdd, datasetPropertyToSet) {
         let logicToApply = (x, y, xIndex, yIndex) => {
-            let cell = this.getCellByQuerySelector(x, y);
+            let cell = this.getCellByQuerySelectorWithDatasetAttributes(x, y);
             
             cell.classList.add(cssClassToAdd);
             cell.dataset[datasetPropertyToSet] = true;
@@ -372,7 +415,7 @@ export default class ExcelTable extends LightningElement {
         }
     }
 
-    getCellByQuerySelector(x, y) {
+    getCellByQuerySelectorWithDatasetAttributes(x, y) {
         return this.template.querySelector(`[data-row="${x}"][data-column="${y}"]`);
     }
     

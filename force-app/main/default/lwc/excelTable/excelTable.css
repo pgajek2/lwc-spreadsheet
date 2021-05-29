@@ -49,7 +49,11 @@ td:hover {
 }
 
 .selected-copied-cell {
-  border: 1px dashed #1a73e8;
+  /* border: 1px dashed #1a73e8; */
+}
+.copy-border {
+  border: 2px dashed #1a73e8;
+  position: absolute;
 }
 .column-label {
   text-align: center;
