@@ -49,7 +49,7 @@ export default class ExcelTable extends LightningElement {
     columns = columns;
     data = data;
 
-    isRangeSelectionBegan = false;
+    isAreaSelectionInProgress = false;
     isRendered = false;
     selectedCellCoordinates = {}; //this with blue border
     selectedAreaCoordinates = {}; //this with blue background
@@ -85,12 +85,11 @@ export default class ExcelTable extends LightningElement {
     }
 
     handleDoubleClick(e) {
-        console.log('handleDoubleClick')
         e.target.disabled = false;
+        e.target.focus();
     }
 
     handleFocusOut(e) {
-        console.log('handleFocusOut')
         e.target.disabled = true;
     }
 
@@ -101,14 +100,13 @@ export default class ExcelTable extends LightningElement {
     handleDown(e) {
         switch (e.which) {
             case 1: //left click
-
                 this.clearPreviouslySelectedArea();
                 this.clearPreviouslySelectedCell();
 
                 this.setSelectedCellCoordinates(e.currentTarget);
                 this.markSelectedCellHtml(e.currentTarget);
 
-                this.allowRangeSelection();
+                this.startAreaSelection();
                 this.setSelectedAreaStartCoordinates(e.currentTarget);
                 break;
             case 3: //right click
@@ -128,16 +126,16 @@ export default class ExcelTable extends LightningElement {
     }
 
     handleOver(e) {
-        if (this.isRangeSelectionBegan) {
+        if (this.isAreaSelectionInProgress) {
             this.clearPreviouslySelectedArea();
-            this.markSelectedAreaInHtml(e.currentTarget);
+            this.recalculateAndMarkSelectedArea(e.currentTarget);
         }
     }
 
     handleUp(e) {
         switch (e.which) {
             case 1: //left click
-                this.abandonRangeSelection();
+                this.finishAreaSelection();
                 this.setSelectedAreaEndCoordinates(e.currentTarget);
                 break;
         }
@@ -146,14 +144,10 @@ export default class ExcelTable extends LightningElement {
     // Selected Cell
 
     setSelectedCellCoordinates(currentCell) {
-        if (!currentCell) {
-            this.selectedCellCoordinates.x = null;
-            this.selectedCellCoordinates.y = null;
+        let { cellXPosition, cellYPosition } = this.getCellCoordinates(currentCell);
 
-            return;
-        }
-        this.selectedCellCoordinates.x = Number(currentCell.dataset.row);
-        this.selectedCellCoordinates.y = Number(currentCell.dataset.column);
+        this.selectedCellCoordinates.x = cellXPosition;
+        this.selectedCellCoordinates.y = cellYPosition;
     }
 
     clearPreviouslySelectedCell() {
@@ -165,74 +159,63 @@ export default class ExcelTable extends LightningElement {
         cell.dataset.selectedcell = true;
     }
 
-    isCurremtCellInSelectedArea(cell) {
+    isCurremtCellInSelectedArea(currentCell) {
+        let { fromX, toX, fromY, toY } = this.getSelectedAreaNormalizedCoordinates();
+        let { cellXPosition, cellYPosition } = this.getCellCoordinates(currentCell);
 
-        let {fromX, toX, fromY, toY} = this.transformCoordinates(
-            this.selectedAreaCoordinates.fromX, 
-            this.selectedAreaCoordinates.toX,
-            this.selectedAreaCoordinates.fromY, 
-            this.selectedAreaCoordinates.toY
-        );
-
-        let xList = this.getNumbersBetween(fromX, toX);
-        let yList = this.getNumbersBetween(fromY, toY);
-
-        let currentCellX = Number(cell.dataset.row);
-        let currentCellY = Number(cell.dataset.column);
-
-        return xList.includes(currentCellX) && yList.includes(currentCellY)
+        return this.getCoordinatesBetweenPoints(fromX, toX).includes(cellXPosition) 
+            && this.getCoordinatesBetweenPoints(fromY, toY).includes(cellYPosition)
     }
 
     // Selected Area
 
     setSelectedAreaStartCoordinates(startCell) {
-        if (!startCell) {
-            this.selectedAreaCoordinates.fromX = null;
-            this.selectedAreaCoordinates.fromY = null;
-
-            return;
-        }
-        this.selectedAreaCoordinates.fromX = Number(startCell.dataset.row);
-        this.selectedAreaCoordinates.fromY = Number(startCell.dataset.column);
+        let { cellXPosition, cellYPosition } = this.getCellCoordinates(startCell);
+        
+        this.selectedAreaCoordinates.fromX = cellXPosition;
+        this.selectedAreaCoordinates.fromY = cellYPosition;
     }
 
     setSelectedAreaEndCoordinates(endCell) {
-        if (!endCell) {
-            this.selectedAreaCoordinates.toX = null;
-            this.selectedAreaCoordinates.toY = null;
+        let { cellXPosition, cellYPosition } = this.getCellCoordinates(endCell);
 
-            return;
-        }
-        this.selectedAreaCoordinates.toX = Number(endCell.dataset.row);
-        this.selectedAreaCoordinates.toY = Number(endCell.dataset.column);
+        this.selectedAreaCoordinates.toX = cellXPosition;
+        this.selectedAreaCoordinates.toY = cellYPosition;
+    }
+
+    cleareSelectedAreaEndCoordinates() {
+        this.selectedAreaCoordinates.toX = null;
+        this.selectedAreaCoordinates.toY = null;
     }
 
     clearPreviouslySelectedArea() {
-        this.setSelectedAreaEndCoordinates(null);
+        this.cleareSelectedAreaEndCoordinates();
         this.removeCssClassAndDatasetFromCellsBetweenRange(CELL_SELECTED_FROM_RANGE, 'selected');
     }
 
-    markSelectedAreaInHtml(currentCell) {
-        this.markCellsAsSelectedWithCssClassAndDatasetProperty(
-            this.transformCoordinates(
+    recalculateAndMarkSelectedArea(currentCell) {
+        let { cellXPosition, cellYPosition } = this.getCellCoordinates(currentCell);
+
+        this.markAreaCellsBetweenCoordinates(
+            this.getNormalizedCoordinateSystem(
                 this.selectedAreaCoordinates.fromX, 
-                Number(currentCell.dataset.row), 
+                cellXPosition, 
                 this.selectedAreaCoordinates.fromY, 
-                Number(currentCell.dataset.column)
+                cellYPosition
             )
         )
     }
 
-    markCellsAsSelectedWithCssClassAndDatasetProperty(coordinates) {
+    markAreaCellsBetweenCoordinates(coordinates) {
         this.addCssClassAndDatasetToCellsBetweenRange(coordinates, CELL_SELECTED_FROM_RANGE, 'selected');
     }
 
-    allowRangeSelection() {
-        this.isRangeSelectionBegan = true;
+    startAreaSelection() {
+        this.isAreaSelectionInProgress = true;
     }
 
-    abandonRangeSelection() {
-        this.isRangeSelectionBegan = false;
+    finishAreaSelection() {
+        this.isAreaSelectionInProgress = false;
     }
 
     // Context Menu
@@ -245,7 +228,7 @@ export default class ExcelTable extends LightningElement {
         this.template.querySelector('.menu-context').classList.add('slds-hide');
     }
 
-    showPasteContextMenuItem() {
+    showPasteOptionInContextMenu() {
         this.template.querySelector('lightning-button[data-action="paste"]').classList.remove('slds-hide');
     }
 
@@ -264,128 +247,115 @@ export default class ExcelTable extends LightningElement {
 
     applyCopyAction() {
         this.hideContextMenu();
-        this.clearCopiedCellsHtml();
-        this.makeCellsAsCopiedWithCssClassAndDatasetProperty(
-            this.transformCoordinates(
-                this.selectedAreaCoordinates.fromX, 
-                this.selectedAreaCoordinates.toX, 
-                this.selectedAreaCoordinates.fromY, 
-                this.selectedAreaCoordinates.toY
-            )
-        );
+        this.clearPreviouslyCopiedCellsHtml();
+        this.markCellsAsCopiedWithCssClassAndDatasetProperty();
         this.setItemToCopy();
-        this.showPasteContextMenuItem();
+        this.showPasteOptionInContextMenu();
     }
 
-    makeCellsAsCopiedWithCssClassAndDatasetProperty(coordinates) {
-        this.addCssClassAndDatasetToCellsBetweenRange(coordinates, CELL_COPIED, 'copied');
+    markCellsAsCopiedWithCssClassAndDatasetProperty() {
+        this.addCssClassAndDatasetToCellsBetweenRange(
+            this.getSelectedAreaNormalizedCoordinates(), 
+            CELL_COPIED, 
+            'copied'
+        );
     }
 
     setItemToCopy() {
         this.copyCoordinates = JSON.parse(JSON.stringify(this.selectedAreaCoordinates));
     }
 
-    clearCopiedCellsHtml() {
+    clearPreviouslyCopiedCellsHtml() {
         this.removeCssClassAndDatasetFromCellsBetweenRange(CELL_COPIED, 'copied');
     }
 
     // Paste
 
     applyPasteAction() {
-        console.log('destination: ' + JSON.stringify(this.selectedCellCoordinates))
-        console.log('copyCoordinates:', JSON.stringify(this.copyCoordinates));
+        let transformedCopyCoordinates = this.getCopiedAreaNormalizedCoordinates();
+        let values = this.getValuesBetweemRange(transformedCopyCoordinates );
 
-        let transformedCopyCoordinates = this.transformCoordinates(
-            this.copyCoordinates.fromX, 
-            this.copyCoordinates.toX, 
-            this.copyCoordinates.fromY, 
-            this.copyCoordinates.toY
+        let selectedRowsSize = transformedCopyCoordinates.toX - transformedCopyCoordinates.fromX;
+        let selectedColumnsSize = transformedCopyCoordinates.toY - transformedCopyCoordinates.fromY;
+
+        let logicToApply = (x, y, row, column) => {
+            this.getCellByQuerySelector(x, y).firstChild.value = values[row][column];
+        };
+
+        this.itterateThroughCellsInRangeAndApplyLogic(
+            {
+                fromX: this.selectedCellCoordinates.x,
+                toX: this.selectedCellCoordinates.x + selectedRowsSize,
+                fromY: this.selectedCellCoordinates.y, 
+                toY: this.selectedCellCoordinates.y + selectedColumnsSize
+            }, 
+            logicToApply.bind(this)
         );
-        let values = this.getValuesBetweemRamge(
-            transformedCopyCoordinates
-        );
-        console.log(values);
-        let xSize = transformedCopyCoordinates.toX - transformedCopyCoordinates.fromX;
-        let ySize = transformedCopyCoordinates.toY - transformedCopyCoordinates.fromY;
 
-        let xList = this.getNumbersBetween(this.selectedCellCoordinates.x, this.selectedCellCoordinates.x + xSize);
-        let yList = this.getNumbersBetween(this.selectedCellCoordinates.y, this.selectedCellCoordinates.y + ySize);
-        console.log(xList);
-        console.log(yList);
-
-        if (xList.length > 0 && yList.length > 0) {
-            xList.forEach((x, row) => {
-                yList.forEach((y, column)  => {
-                    let cell = this.template.querySelector(`[data-row="${x}"][data-column="${y}"]`);
-                    if (cell) {
-                        cell.firstChild.value = values[row][column];
-                    }
-                });
-            });
-        }
-
-        this.markCellsAsSelectedWithCssClassAndDatasetProperty({
+        this.markAreaCellsBetweenCoordinates({
             fromX: this.selectedCellCoordinates.x,
-            toX: this.selectedCellCoordinates.x + xSize,
+            toX: this.selectedCellCoordinates.x + selectedRowsSize,
             fromY: this.selectedCellCoordinates.y,
-            toY: this.selectedCellCoordinates.y + ySize
+            toY: this.selectedCellCoordinates.y + selectedColumnsSize
         });
 
         this.hideContextMenu();
-        this.clearCopiedCellsHtml();
-       // this.clearItemsToCopy(); allow to past multiple times
-    }
-
-    clearItemsToCopy() {
-        this.copyCoordinates = {};
-        this.hidePasteContextMenuItem();
+        this.clearPreviouslyCopiedCellsHtml();
     }
 
     // General
 
-    getValuesBetweemRamge({fromX, toX, fromY, toY}) {
-        let xList = this.getNumbersBetween(fromX, toX);
-        let yList = this.getNumbersBetween(fromY, toY);
-        
-        let values = [], rowValues = []
-        if (xList.length > 0 && yList.length > 0) {
-            xList.forEach(x => {
-                rowValues = []
-                yList.forEach(y => {
-                    let cell = this.template.querySelector(`[data-row="${x}"][data-column="${y}"]`);
-                    if (cell) {
-                        rowValues.push(cell.firstChild.value);
-                    }
-                });
-                values.push(rowValues);
-            });
-            
-        }
+    getValuesBetweemRange({fromX, toX, fromY, toY}) {
+        let values = [];
+
+        let logicToApply = (x, y, xIndex, yIndex) => {
+            if (!values[xIndex]) {
+                values[xIndex] = [];
+            }
+            values[xIndex].push(
+                this.getCellByQuerySelector(x, y).firstChild.value
+            );
+        };
+
+        this.itterateThroughCellsInRangeAndApplyLogic(
+            { fromX, toX, fromY, toY }, 
+            logicToApply.bind(this)
+        );
 
         return values;
     }
 
-    transformCoordinates(startX, endX, startY, endY) {
+    getNormalizedCoordinateSystem(fromX, toX, fromY, toY) {
         return {
-            fromX: endX - startX > 0 ? startX : endX,
-            toX: endX - startX > 0 ? endX : startX,
-            fromY: endY - startY > 0 ? startY : endY,
-            toY: endY - startY > 0 ? endY : startY
-        };
+            fromX: toX - fromX > 0 ? fromX : toX,
+            toX: toX - fromX > 0 ? toX : fromX,
+            fromY: toY - fromY > 0 ? fromY : toY,
+            toY: toY - fromY > 0 ? toY : fromY
+        }; // coordinates order in asc order
     }
 
-    addCssClassAndDatasetToCellsBetweenRange({fromX, toX, fromY, toY}, cssClassToAdd, datasetPropertyToSet) {
-        let xList = this.getNumbersBetween(fromX, toX);
-        let yList = this.getNumbersBetween(fromY, toY);
+    addCssClassAndDatasetToCellsBetweenRange({ fromX, toX, fromY, toY }, cssClassToAdd, datasetPropertyToSet) {
+        let logicToApply = (x, y, xIndex, yIndex) => {
+            let cell = this.getCellByQuerySelector(x, y);
+            
+            cell.classList.add(cssClassToAdd);
+            cell.dataset[datasetPropertyToSet] = true;
+        };
+
+        this.itterateThroughCellsInRangeAndApplyLogic(
+            { fromX, toX, fromY, toY }, 
+            logicToApply.bind(this)
+        );
+    }
+
+    itterateThroughCellsInRangeAndApplyLogic({ fromX, toX, fromY, toY }, logicToApply) {
+        let xList = this.getCoordinatesBetweenPoints(fromX, toX);
+        let yList = this.getCoordinatesBetweenPoints(fromY, toY);
 
         if (xList.length > 0 && yList.length > 0) {
-            xList.forEach(x => {
-                yList.forEach(y => {
-                    let cell = this.template.querySelector(`[data-row="${x}"][data-column="${y}"]`);
-                    if (cell) {
-                        cell.classList.add(cssClassToAdd);
-                        cell.dataset[datasetPropertyToSet] = true;
-                    }
+            xList.forEach((x, xIndex) => {
+                yList.forEach((y, yIndex) => {
+                    logicToApply(x, y, xIndex, yIndex);
                 });
             });
         }
@@ -402,7 +372,36 @@ export default class ExcelTable extends LightningElement {
         }
     }
 
-    getNumbersBetween(a, b) {
+    getCellByQuerySelector(x, y) {
+        return this.template.querySelector(`[data-row="${x}"][data-column="${y}"]`);
+    }
+    
+    getCellCoordinates(cell) {
+        return {
+            cellXPosition: Number(cell.dataset.row),
+            cellYPosition: Number(cell.dataset.column)
+        };
+    }
+
+    getSelectedAreaNormalizedCoordinates() {
+        return this.getNormalizedCoordinateSystem(
+            this.selectedAreaCoordinates.fromX, 
+            this.selectedAreaCoordinates.toX, 
+            this.selectedAreaCoordinates.fromY, 
+            this.selectedAreaCoordinates.toY
+        );
+    }
+
+    getCopiedAreaNormalizedCoordinates() {
+        return this.getNormalizedCoordinateSystem(
+            this.copyCoordinates.fromX, 
+            this.copyCoordinates.toX, 
+            this.copyCoordinates.fromY, 
+            this.copyCoordinates.toY
+        );
+    }
+
+    getCoordinatesBetweenPoints(a, b) {
         let numbersInRange = [];
 
         while (a <= b) {
