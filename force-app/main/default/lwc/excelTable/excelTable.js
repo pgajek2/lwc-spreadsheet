@@ -1,6 +1,5 @@
 import { LightningElement } from 'lwc';
 
-
 const columns = [
     { label: 'Label', fieldName: 'name', editable: true},
     { label: 'Website', fieldName: 'website', type: 'url' },
@@ -295,9 +294,46 @@ export default class ExcelTable extends LightningElement {
     applyPasteAction() {
         console.log('destination: ' + JSON.stringify(this.selectedCellCoordinates))
         console.log('copyCoordinates:', JSON.stringify(this.copyCoordinates));
+
+        let transformedCopyCoordinates = this.transformCoordinates(
+            this.copyCoordinates.fromX, 
+            this.copyCoordinates.toX, 
+            this.copyCoordinates.fromY, 
+            this.copyCoordinates.toY
+        );
+        let values = this.getValuesBetweemRamge(
+            transformedCopyCoordinates
+        );
+        console.log(values);
+        let xSize = transformedCopyCoordinates.toX - transformedCopyCoordinates.fromX;
+        let ySize = transformedCopyCoordinates.toY - transformedCopyCoordinates.fromY;
+
+        let xList = this.getNumbersBetween(this.selectedCellCoordinates.x, this.selectedCellCoordinates.x + xSize);
+        let yList = this.getNumbersBetween(this.selectedCellCoordinates.y, this.selectedCellCoordinates.y + ySize);
+        console.log(xList);
+        console.log(yList);
+
+        if (xList.length > 0 && yList.length > 0) {
+            xList.forEach((x, row) => {
+                yList.forEach((y, column)  => {
+                    let cell = this.template.querySelector(`[data-row="${x}"][data-column="${y}"]`);
+                    if (cell) {
+                        cell.firstChild.value = values[row][column];
+                    }
+                });
+            });
+        }
+
+        this.markCellsAsSelectedWithCssClassAndDatasetProperty({
+            fromX: this.selectedCellCoordinates.x,
+            toX: this.selectedCellCoordinates.x + xSize,
+            fromY: this.selectedCellCoordinates.y,
+            toY: this.selectedCellCoordinates.y + ySize
+        });
+
         this.hideContextMenu();
         this.clearCopiedCellsHtml();
-        this.clearItemsToCopy();
+       // this.clearItemsToCopy(); allow to past multiple times
     }
 
     clearItemsToCopy() {
@@ -306,6 +342,28 @@ export default class ExcelTable extends LightningElement {
     }
 
     // General
+
+    getValuesBetweemRamge({fromX, toX, fromY, toY}) {
+        let xList = this.getNumbersBetween(fromX, toX);
+        let yList = this.getNumbersBetween(fromY, toY);
+        
+        let values = [], rowValues = []
+        if (xList.length > 0 && yList.length > 0) {
+            xList.forEach(x => {
+                rowValues = []
+                yList.forEach(y => {
+                    let cell = this.template.querySelector(`[data-row="${x}"][data-column="${y}"]`);
+                    if (cell) {
+                        rowValues.push(cell.firstChild.value);
+                    }
+                });
+                values.push(rowValues);
+            });
+            
+        }
+
+        return values;
+    }
 
     transformCoordinates(startX, endX, startY, endY) {
         return {
