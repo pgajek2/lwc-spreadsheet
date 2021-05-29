@@ -43,7 +43,6 @@ const CONTEXT_MENU_ACTIONS = {
 const CELL_SELECTED_FROM_RANGE = 'selected-cell';
 const CELL_SELECTED = 'selected-cell-border';
 const CELL_COPIED = 'selected-copied-cell';
-const COPY_BORDER_CLASS = 'copy-border';
 
 export default class ExcelTable extends LightningElement {
 
@@ -229,6 +228,14 @@ export default class ExcelTable extends LightningElement {
         this.template.querySelector('.menu-context').classList.add('slds-hide');
     }
 
+    showCopyAreaBorder() {
+        this.template.querySelector('.copy-border').classList.remove('slds-hide');
+    }
+
+    hideCopyAreaBorder() {
+        this.template.querySelector('.copy-border').classList.add('slds-hide');
+    }
+
     showPasteOptionInContextMenu() {
         this.template.querySelector('lightning-button[data-action="paste"]').classList.remove('slds-hide');
     }
@@ -275,13 +282,30 @@ export default class ExcelTable extends LightningElement {
     }
 
     addDashedBorderToCopiedArea() {
+        let { width, height, beginOffsetTop, beginOffsetLeft } = this.getCopyAreaDimentions();
+        let copyAreaBorder = this.template.querySelector('.copy-border');
+
+        copyAreaBorder.style.setProperty("top", `${beginOffsetTop}px`);
+        copyAreaBorder.style.setProperty("left", `${beginOffsetLeft}px`);
+        copyAreaBorder.style.setProperty("width", `${width}px`);
+        copyAreaBorder.style.setProperty("height", `${height}px`);
+
+        this.showCopyAreaBorder();
+    }
+
+    getCopyAreaDimentions() {
         let copyCoordinates = this.getCopiedAreaNormalizedCoordinates();
-        let startCell = this.getCellByQuerySelectorWithDatasetAttributes(copyCoordinates.fromX, copyCoordinates.fromY);
-        
+
         let width = 0;
         let height = 0;
+        let beginOffsetTop = 0;
+        let beginOffsetLeft = 0;
 
         let calculateCopiedAreaSize = (x, y, xIndex, yIndex) => {
+            if (xIndex === 0 && yIndex === 0) { //first cell position
+                beginOffsetTop = this.getCellByQuerySelectorWithDatasetAttributes(x, y).offsetTop;
+                beginOffsetLeft = this.getCellByQuerySelectorWithDatasetAttributes(x, y).offsetLeft;
+            }
             if (xIndex === 0) { //only size for first row
                 width += this.getCellByQuerySelectorWithDatasetAttributes(x, y).offsetWidth;
             }
@@ -295,15 +319,12 @@ export default class ExcelTable extends LightningElement {
             calculateCopiedAreaSize.bind(this)
         );
 
-        
-        let border = this.template.querySelector(`.${COPY_BORDER_CLASS}`);
-
-        border.classList.remove('slds-hide');
-
-        border.style.setProperty("top", `${startCell.offsetTop}px`);
-        border.style.setProperty("left", `${startCell.offsetLeft}px`);
-        border.style.setProperty("width", `${width}px`);
-        border.style.setProperty("height", `${height}px`);
+        return { 
+            width, 
+            height,
+            beginOffsetTop,
+            beginOffsetLeft
+        };
     }
 
     // Paste
@@ -343,7 +364,7 @@ export default class ExcelTable extends LightningElement {
 
         this.hideContextMenu();
         this.clearPreviouslyCopiedCellsHtml();
-        this.template.querySelector(`.${COPY_BORDER_CLASS}`).classList.add('slds-hide');
+        this.hideCopyAreaBorder();
     }
 
     // General
@@ -416,6 +437,7 @@ export default class ExcelTable extends LightningElement {
     }
 
     getCellByQuerySelectorWithDatasetAttributes(x, y) {
+
         return this.template.querySelector(`[data-row="${x}"][data-column="${y}"]`);
     }
     
