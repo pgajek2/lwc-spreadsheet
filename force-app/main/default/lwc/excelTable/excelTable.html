@@ -1,37 +1,52 @@
 <template>
-      <table style="width:100%">
+      <table style="width:100%" oncontextmenu={handleContextMenu}>
         <tr>
-          <th>Firstname</th>
-          <th>Lastname</th>
-          <th>Age</th>
-          <th>sssAge</th>
+          <th></th>
+          <th class="column-label">0</th>
+          <th class="column-label">1</th>
+          <th class="column-label">0</th>
+          <th class="column-label">3</th>
+          <th class="column-label">4</th>
+          <th class="column-label">5</th>
+          <th class="column-label">6</th>
+          <th class="column-label">7</th>
         </tr>
         <template for:each={data} for:item="item" for:index="index"> 
           <tr key={item.Id}>
-            <td data-row={index} data-column="1" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown} oncopy={handleCopy}>
-              <input type='text' value='hihihih' ondblclick={handleDoubleClick} onfocusout={handleFocusOut} disabled/>
+            <td class="row-number" key={data.test}>
+              {index}
             </td>
-            <td data-row={index} data-column="2" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown} oncopy={handleCopy}>
-              {index} - 2
+            <td data-row={index} data-column="1" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
+              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
             </td>
-            <td data-row={index} data-column="3" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown} oncopy={handleCopy}>
-              {index} - 3
+            <td data-row={index} data-column="2" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
+              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
             </td>
-            <td data-row={index} data-column="4" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown} oncopy={handleCopy}>
-              {index} - 4
+            <td data-row={index} data-column="3" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
+              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
+            </td>
+            <td data-row={index} data-column="4" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
+              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
+            </td>
+            <td data-row={index} data-column="5" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
+              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
+            </td>
+            <td data-row={index} data-column="6" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
+              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
+            </td>
+            <td data-row={index} data-column="7" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
+              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
+            </td>
+            <td data-row={index} data-column="8" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
+              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
             </td>
           </tr>
         </template>
-
       </table> 
 
       <div id="context-menu" class="menu-context">
-          <lightning-vertical-navigation onselect={handleContextMenuAction} compact>
-            <lightning-vertical-navigation-section >
-                <lightning-vertical-navigation-item-icon icon-name="utility:user" label="Copy" name="copy"></lightning-vertical-navigation-item-icon>
-                <lightning-vertical-navigation-item-icon icon-name="utility:user" label="Paste" name="paste" if:true={hasCopiedItems}></lightning-vertical-navigation-item-icon>
-            </lightning-vertical-navigation-section>
-        </lightning-vertical-navigation>
+          <lightning-button variant="base" label="Copy" icon-name="utility:copy" data-action="copy" onclick={handleContextMenuAction}></lightning-button>
+          <lightning-button variant="base" label="Paste" icon-name="utility:paste" data-action="paste" onclick={handleContextMenuAction}></lightning-button>
       </div>
 
 </template>

@@ -9,6 +9,33 @@ const columns = [
     { label: 'CloseAt', fieldName: 'closeAt', type: 'date' },
 ];
 
+const data = [
+    {Id: '12', test: '0001'},
+    {Id: '123', test: '0002'},
+    {Id: '14', test: '0003'},
+    {Id: '125', test: '0004'},
+    {Id: '16', test: '0005'},
+    {Id: '127', test: '0006'},
+    {Id: '18', test: '0007'},
+    {Id: '1212', test: '0008'},
+    {Id: '19', test: '0009'},
+    {Id: '12df', test: '0010'},
+    {Id: '1df', test: '0011'},
+    {Id: '12s', test: '0012'},
+    {Id: '1eea', test: '0013'},
+    {Id: '12dc', test: '0014'},
+    {Id: '14t', test: '0015'},
+    {Id: '12jk', test: '0016'},
+    {Id: '1h', test: '0017'},
+    {Id: '12ghj', test: '0018'},
+    {Id: 'nn1', test: '0019'},
+    {Id: '12hj', test: '0020'},
+    {Id: '1hj', test: '0021'},
+    {Id: '12gh', test: '0022'},
+    {Id: '1nb', test: '0023'},
+    {Id: '12hj', test: '0024'}
+]
+
 const CONTEXT_MENU_ACTIONS = {
     COPY: 'copy',
     PASTE: 'paste'
@@ -21,94 +48,34 @@ const CELL_COPIED = 'selected-copied-cell';
 export default class ExcelTable extends LightningElement {
 
     columns = columns;
+    data = data;
+
     isRangeSelectionBegan = false;
     isRendered = false;
-    hasCopiedItems = false;
-    //renderContextMenu = false;
-    globalCoordinates = {};
+    selectedCellCoordinates = {}; //this with blue border
+    selectedAreaCoordinates = {}; //this with blue background
     copyCoordinates = {};
-
-    data = [
-        {Id: '12', website: 'aa'},
-        {Id: '123', website: 'bb'},
-        {Id: '14', website: 'aa'},
-        {Id: '125', website: 'bb'},
-        {Id: '16', website: 'aa'},
-        {Id: '127', website: 'bb'},
-        {Id: '18', website: 'aa'},
-        {Id: '1212', website: 'bb'},
-        {Id: '19', website: 'aa'},
-        {Id: '12df', website: 'bb'},
-        {Id: '1df', website: 'aa'},
-        {Id: '12s', website: 'bb'},
-        {Id: '1eea', website: 'aa'},
-        {Id: '12dc', website: 'bb'},
-        {Id: '14t', website: 'aa'},
-        {Id: '12jk', website: 'bb'},
-        {Id: '1h', website: 'aa'},
-        {Id: '12ghj', website: 'bb'},
-        {Id: 'nn1', website: 'aa'},
-        {Id: '12hj', website: 'bb'},
-        {Id: '1hj', website: 'aa'},
-        {Id: '12gh', website: 'bb'},
-        {Id: '1nb', website: 'aa'},
-        {Id: '12hj', website: 'bb'}
-    ]
 
     renderedCallback() {
         if (this.isRendered) {
             return;
         }
         this.hideContextMenu();
-        this.addContextMenuEventListenerToTable();
+        this.hidePasteContextMenuItem();
         this.isRendered = true;
     }
 
-    addContextMenuEventListenerToTable() {
-        this.template.querySelector('table').addEventListener('contextmenu', (e) => { 
-            e.preventDefault();
-
-            this.showContextMenu(); 
-            this.setContextMenuPosition(e.clientX, e.clientY);
-        }, false);
-    }
-
-    setContextMenuPosition(positionX, positionY) {
-        let contextMenuElement = this.template.querySelector('.menu-context');
-
-        contextMenuElement.style.setProperty("bottom", `${positionX}px`);
-        contextMenuElement.style.setProperty("right", `${positionY}px`);
-    }
-
-    showContextMenu() {
-        this.template.querySelector('.menu-context').style.display = "block";
-    }
-
-    hideContextMenu() {
-        this.template.querySelector('.menu-context').style.display = "none";
-    }
-
-    startRangeSelection() {
-        this.isRangeSelectionBegan = true;
-    }
-
-    stopRangeSelection() {
-        this.isRangeSelectionBegan = false;
-    }
-
-    setStartSelectionCoordinates(x, y) {
-        this.globalCoordinates.fromX = x;
-        this.globalCoordinates.fromY = y;
-    }
-
-    setEndSelectionCoordinates(x, y) {
-        this.globalCoordinates.toX = x;
-        this.globalCoordinates.toY = y;
-    }
     // handlers 
 
+    handleContextMenu(e) {
+        e.preventDefault();
+
+        this.showContextMenu(); 
+        this.setContextMenuPosition(e.pageX, e.pageY);
+    }
+
     handleContextMenuAction(e) {
-        switch (e.detail.name) {
+        switch (e.currentTarget.dataset.action) {
             case CONTEXT_MENU_ACTIONS.COPY:
                 this.applyCopyAction();
                 break;
@@ -119,107 +86,226 @@ export default class ExcelTable extends LightningElement {
     }
 
     handleDoubleClick(e) {
-        console.log('Double')
+        console.log('handleDoubleClick')
         e.target.disabled = false;
     }
 
     handleFocusOut(e) {
+        console.log('handleFocusOut')
         e.target.disabled = true;
     }
 
+    handleCellValueChange(e) {
+        console.log('handleCellValueChange');
+    }
+
     handleDown(e) {
-        if (e.which === 1) { //left click
-            this.clearSelectedRange();
-            this.cleareSelectedCell();
-            this.markSelectedCell(e.currentTarget);
-            this.startRangeSelection();
-            this.setStartSelectionCoordinates(
-                Number(e.currentTarget.dataset.row),
-                Number(e.currentTarget.dataset.column)
-            );
+        switch (e.which) {
+            case 1: //left click
+
+                this.clearPreviouslySelectedArea();
+                this.clearPreviouslySelectedCell();
+
+                this.setSelectedCellCoordinates(e.currentTarget);
+                this.markSelectedCellHtml(e.currentTarget);
+
+                this.allowRangeSelection();
+                this.setSelectedAreaStartCoordinates(e.currentTarget);
+                break;
+            case 3: //right click
+                if (!this.isCurremtCellInSelectedArea(e.currentTarget)) {
+
+                    this.clearPreviouslySelectedArea();
+                    this.clearPreviouslySelectedCell();
+
+                    this.setSelectedCellCoordinates(e.currentTarget);
+                    this.markSelectedCellHtml(e.currentTarget);
+
+                    this.setSelectedAreaStartCoordinates(e.currentTarget);
+                    this.setSelectedAreaEndCoordinates(e.currentTarget);
+                }
+                break;
         }
     }
 
     handleOver(e) {
         if (this.isRangeSelectionBegan) {
-            this.markSelectedRange(
-                Number(e.currentTarget.dataset.row), 
-                Number(e.currentTarget.dataset.column)
-            );
+            this.clearPreviouslySelectedArea();
+            this.markSelectedAreaInHtml(e.currentTarget);
         }
     }
 
     handleUp(e) {
-        if (e.which === 1) { //left click
-            this.stopRangeSelection();
-            this.setEndSelectionCoordinates(
-                Number(e.currentTarget.dataset.row),
-                Number(e.currentTarget.dataset.column)
-            );
+        switch (e.which) {
+            case 1: //left click
+                this.abandonRangeSelection();
+                this.setSelectedAreaEndCoordinates(e.currentTarget);
+                break;
         }
     }
 
-    applyCopyAction() {
-        this.hideContextMenu();
-        this.clearCopiedCells();
-        this.makeCellsAsCopiedWithCssClassAndDatasetProperty(
-            this.transformCoordinates(
-                this.globalCoordinates.fromX, 
-                this.globalCoordinates.toX, 
-                this.globalCoordinates.fromY, 
-                this.globalCoordinates.toY
-            )
-        );
-        this.setItemToCopy();
+    // Selected Cell
+
+    setSelectedCellCoordinates(currentCell) {
+        if (!currentCell) {
+            this.selectedCellCoordinates.x = null;
+            this.selectedCellCoordinates.y = null;
+
+            return;
+        }
+        this.selectedCellCoordinates.x = Number(currentCell.dataset.row);
+        this.selectedCellCoordinates.y = Number(currentCell.dataset.column);
     }
 
-    applyPasteAction() {
-        console.log('globalCoordinantes: ' + JSON.stringify(this.globalCoordinates))
-        console.log('copyCoordinates:', JSON.stringify(this.copyCoordinates));
-        this.hideContextMenu();
-        this.clearCopiedCells();
-        this.clearItemsToCopy();
+    clearPreviouslySelectedCell() {
+        this.removeCssClassAndDatasetFromCellsBetweenRange(CELL_SELECTED, 'selectedcell');
     }
 
-    setItemToCopy() {
-        this.copyCoordinates = JSON.parse(JSON.stringify(this.globalCoordinates));
-        this.hasCopiedItems = true;
-    }
-
-    clearItemsToCopy() {
-        this.copyCoordinates = {};
-        this.hasCopiedItems = false;
-    }
-
-    clearCopiedCells() {
-        this.removeCssClassAndDatasetFromCellsBetweenRange(CELL_COPIED, 'copied');
-    }
-
-    markSelectedCell(cell) {
+    markSelectedCellHtml(cell) {
         cell.classList.add(CELL_SELECTED);
         cell.dataset.selectedcell = true;
     }
 
-    cleareSelectedCell() {
-        this.removeCssClassAndDatasetFromCellsBetweenRange(CELL_SELECTED, 'selectedcell');
-    }
+    isCurremtCellInSelectedArea(cell) {
 
-    markSelectedRange(currentX, currentY) {
-        this.clearSelectedRange();
-        this.markCellsAsSelectedWithCssClassAndDatasetProperty(
-            this.transformCoordinates(
-                this.globalCoordinates.fromX, 
-                currentX,
-                this.globalCoordinates.fromY, 
-                currentY
-            )
+        let {fromX, toX, fromY, toY} = this.transformCoordinates(
+            this.selectedAreaCoordinates.fromX, 
+            this.selectedAreaCoordinates.toX,
+            this.selectedAreaCoordinates.fromY, 
+            this.selectedAreaCoordinates.toY
         );
+
+        let xList = this.getNumbersBetween(fromX, toX);
+        let yList = this.getNumbersBetween(fromY, toY);
+
+        let currentCellX = Number(cell.dataset.row);
+        let currentCellY = Number(cell.dataset.column);
+
+        return xList.includes(currentCellX) && yList.includes(currentCellY)
     }
 
-    clearSelectedRange() {
-        this.setEndSelectionCoordinates(null, null);
+    // Selected Area
+
+    setSelectedAreaStartCoordinates(startCell) {
+        if (!startCell) {
+            this.selectedAreaCoordinates.fromX = null;
+            this.selectedAreaCoordinates.fromY = null;
+
+            return;
+        }
+        this.selectedAreaCoordinates.fromX = Number(startCell.dataset.row);
+        this.selectedAreaCoordinates.fromY = Number(startCell.dataset.column);
+    }
+
+    setSelectedAreaEndCoordinates(endCell) {
+        if (!endCell) {
+            this.selectedAreaCoordinates.toX = null;
+            this.selectedAreaCoordinates.toY = null;
+
+            return;
+        }
+        this.selectedAreaCoordinates.toX = Number(endCell.dataset.row);
+        this.selectedAreaCoordinates.toY = Number(endCell.dataset.column);
+    }
+
+    clearPreviouslySelectedArea() {
+        this.setSelectedAreaEndCoordinates(null);
         this.removeCssClassAndDatasetFromCellsBetweenRange(CELL_SELECTED_FROM_RANGE, 'selected');
     }
+
+    markSelectedAreaInHtml(currentCell) {
+        this.markCellsAsSelectedWithCssClassAndDatasetProperty(
+            this.transformCoordinates(
+                this.selectedAreaCoordinates.fromX, 
+                Number(currentCell.dataset.row), 
+                this.selectedAreaCoordinates.fromY, 
+                Number(currentCell.dataset.column)
+            )
+        )
+    }
+
+    markCellsAsSelectedWithCssClassAndDatasetProperty(coordinates) {
+        this.addCssClassAndDatasetToCellsBetweenRange(coordinates, CELL_SELECTED_FROM_RANGE, 'selected');
+    }
+
+    allowRangeSelection() {
+        this.isRangeSelectionBegan = true;
+    }
+
+    abandonRangeSelection() {
+        this.isRangeSelectionBegan = false;
+    }
+
+    // Context Menu
+
+    showContextMenu() {
+        this.template.querySelector('.menu-context').classList.remove('slds-hide');
+    }
+
+    hideContextMenu() {
+        this.template.querySelector('.menu-context').classList.add('slds-hide');
+    }
+
+    showPasteContextMenuItem() {
+        this.template.querySelector('lightning-button[data-action="paste"]').classList.remove('slds-hide');
+    }
+
+    hidePasteContextMenuItem() {
+        this.template.querySelector('lightning-button[data-action="paste"]').classList.add('slds-hide');
+    }
+
+    setContextMenuPosition(positionX, positionY) {
+        let contextMenuElement = this.template.querySelector('.menu-context');
+
+        contextMenuElement.style.setProperty("top", `${positionY}px`);
+        contextMenuElement.style.setProperty("left", `${positionX}px`);  
+    }
+
+    // Copy 
+
+    applyCopyAction() {
+        this.hideContextMenu();
+        this.clearCopiedCellsHtml();
+        this.makeCellsAsCopiedWithCssClassAndDatasetProperty(
+            this.transformCoordinates(
+                this.selectedAreaCoordinates.fromX, 
+                this.selectedAreaCoordinates.toX, 
+                this.selectedAreaCoordinates.fromY, 
+                this.selectedAreaCoordinates.toY
+            )
+        );
+        this.setItemToCopy();
+        this.showPasteContextMenuItem();
+    }
+
+    makeCellsAsCopiedWithCssClassAndDatasetProperty(coordinates) {
+        this.addCssClassAndDatasetToCellsBetweenRange(coordinates, CELL_COPIED, 'copied');
+    }
+
+    setItemToCopy() {
+        this.copyCoordinates = JSON.parse(JSON.stringify(this.selectedAreaCoordinates));
+    }
+
+    clearCopiedCellsHtml() {
+        this.removeCssClassAndDatasetFromCellsBetweenRange(CELL_COPIED, 'copied');
+    }
+
+    // Paste
+
+    applyPasteAction() {
+        console.log('destination: ' + JSON.stringify(this.selectedCellCoordinates))
+        console.log('copyCoordinates:', JSON.stringify(this.copyCoordinates));
+        this.hideContextMenu();
+        this.clearCopiedCellsHtml();
+        this.clearItemsToCopy();
+    }
+
+    clearItemsToCopy() {
+        this.copyCoordinates = {};
+        this.hidePasteContextMenuItem();
+    }
+
+    // General
 
     transformCoordinates(startX, endX, startY, endY) {
         return {
@@ -228,14 +314,6 @@ export default class ExcelTable extends LightningElement {
             fromY: endY - startY > 0 ? startY : endY,
             toY: endY - startY > 0 ? endY : startY
         };
-    }
-
-    markCellsAsSelectedWithCssClassAndDatasetProperty(coordinates) {
-        this.addCssClassAndDatasetToCellsBetweenRange(coordinates, CELL_SELECTED_FROM_RANGE, 'selected');
-    }
-
-    makeCellsAsCopiedWithCssClassAndDatasetProperty(coordinates) {
-        this.addCssClassAndDatasetToCellsBetweenRange(coordinates, CELL_COPIED, 'copied');
     }
 
     addCssClassAndDatasetToCellsBetweenRange({fromX, toX, fromY, toY}, cssClassToAdd, datasetPropertyToSet) {
@@ -256,10 +334,14 @@ export default class ExcelTable extends LightningElement {
     }
 
     removeCssClassAndDatasetFromCellsBetweenRange(cssClassToRemove, datasetPropertyToClear) {
-        this.template.querySelectorAll(`[data-${datasetPropertyToClear}="true"]`).forEach(cell => {
-            cell.classList.remove(cssClassToRemove);
-            cell.dataset[datasetPropertyToClear] = false;
-        });
+        let itemsToClrear = this.template.querySelectorAll(`[data-${datasetPropertyToClear}="true"]`);
+
+        if (itemsToClrear && itemsToClrear.length > 0) {
+            itemsToClrear.forEach(cell => {
+                cell.classList.remove(cssClassToRemove);
+                cell.dataset[datasetPropertyToClear] = false;
+            });
+        }
     }
 
     getNumbersBetween(a, b) {
@@ -271,5 +353,4 @@ export default class ExcelTable extends LightningElement {
         }
         return numbersInRange;
     }
-
 }
