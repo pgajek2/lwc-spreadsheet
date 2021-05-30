@@ -1,6 +1,6 @@
 import { LightningElement } from 'lwc';
 
-const columns = [
+const COLUMNS = [
     { label: 'Label', fieldName: 'name', editable: true},
     { label: 'Website', fieldName: 'website', type: 'url' },
     { label: 'Phone', fieldName: 'phone', type: 'phone' },
@@ -35,21 +35,22 @@ const data = [
     {Id: '12hj', test: '0024'}
 ]
 
-const CONTEXT_MENU_ACTIONS = {
-    COPY: 'copy',
-    PASTE: 'paste'
-};
-
 const CELL_SELECTED_FROM_RANGE = 'selected-cell';
 const CELL_SELECTED = 'selected-cell-border';
 const CELL_COPIED = 'selected-copied-cell';
 
 export default class ExcelTable extends LightningElement {
 
-    columns = columns;
+    columns = COLUMNS;
     data = data;
+    contextMenuItems = [
+        { label: 'Copy',  action: 'copy',  icon: 'utility:copy',  actionHandler: this.handleCopy.bind(this)  }, 
+        { label: 'Paste', action: 'paste', icon: 'utility:paste', actionHandler: this.handlePaste.bind(this) },
+        { label: 'Undo',  action: 'undo',  icon: 'utility:undo',  actionHandler: this.handleUndo.bind(this)  }
+    ];
 
     isAreaSelectionInProgress = false;
+    isStartTyping = false;
     isRendered = false;
     selectedCellCoordinates = {}; //this with blue border
     selectedAreaCoordinates = {}; //this with blue background
@@ -60,28 +61,56 @@ export default class ExcelTable extends LightningElement {
             return;
         }
         this.hideContextMenu();
+        document.addEventListener('keypress', this.handleKeypress.bind(this));
         this.hidePasteContextMenuItem();
         this.isRendered = true;
     }
 
     // handlers 
 
+    handleKeypress(e) {
+        if (!this.isStartTyping) {
+            this.getCellByQuerySelectorWithDatasetAttributes(
+                this.selectedCellCoordinates.x, 
+                this.selectedCellCoordinates.y
+            ).firstChild.disabled = false;
+            this.getCellByQuerySelectorWithDatasetAttributes(
+                this.selectedCellCoordinates.x, 
+                this.selectedCellCoordinates.y
+            ).firstChild.select();
+            this.getCellByQuerySelectorWithDatasetAttributes(
+                this.selectedCellCoordinates.x, 
+                this.selectedCellCoordinates.y
+            ).firstChild.focus();
+            this.isStartTyping = true;
+        }
+    }
+
+    handleCopy(e) { 
+        e.preventDefault();
+
+        this.hideContextMenu();
+        this.clearPreviouslyCopiedCellsHtml();
+        this.setItemToCopy();
+        this.markCellsAsCopiedWithCssClassAndDatasetProperty();
+        this.addDashedBorderToCopiedArea();
+        this.showPasteOptionInContextMenu();
+    }
+
+    handlePaste(e) {
+        e.preventDefault();
+
+        this.hideContextMenu();
+        this.pasteValuesToSelectedArea();
+        this.clearPreviouslyCopiedCellsHtml();
+        this.hideCopyAreaBorder();
+    }
+
     handleContextMenu(e) {
         e.preventDefault();
 
         this.showContextMenu(); 
         this.setContextMenuPosition(e.pageX, e.pageY);
-    }
-
-    handleContextMenuAction(e) {
-        switch (e.currentTarget.dataset.action) {
-            case CONTEXT_MENU_ACTIONS.COPY:
-                this.applyCopyAction();
-                break;
-            case CONTEXT_MENU_ACTIONS.PASTE:
-                this.applyPasteAction();
-                break;
-        }
     }
 
     handleDoubleClick(e) {
@@ -91,6 +120,7 @@ export default class ExcelTable extends LightningElement {
 
     handleFocusOut(e) {
         e.target.disabled = true;
+        this.isStartTyping = false;
     }
 
     handleCellValueChange(e) {
@@ -140,6 +170,12 @@ export default class ExcelTable extends LightningElement {
                 break;
         }
     }
+
+    handleUndo(e) {
+        console.log('Undo')
+        this.hideContextMenu();
+    }
+
 
     // Selected Cell
 
@@ -253,18 +289,6 @@ export default class ExcelTable extends LightningElement {
 
     // Copy 
 
-    applyCopyAction() {
-        this.hideContextMenu();
-        this.clearPreviouslyCopiedCellsHtml();
-
-        this.setItemToCopy();
-
-        this.markCellsAsCopiedWithCssClassAndDatasetProperty();
-        this.addDashedBorderToCopiedArea();
-        
-        this.showPasteOptionInContextMenu();
-    }
-
     markCellsAsCopiedWithCssClassAndDatasetProperty() {
         this.addCssClassAndDatasetToCellsBetweenRange(
             this.getCopiedAreaNormalizedCoordinates(), 
@@ -329,7 +353,7 @@ export default class ExcelTable extends LightningElement {
 
     // Paste
 
-    applyPasteAction() {
+    pasteValuesToSelectedArea() {
         let transformedCopyCoordinates = this.getCopiedAreaNormalizedCoordinates();
         let values = this.getValuesBetweemRange(transformedCopyCoordinates );
 
@@ -337,7 +361,10 @@ export default class ExcelTable extends LightningElement {
         let selectedColumnsSize = transformedCopyCoordinates.toY - transformedCopyCoordinates.fromY;
 
         let logicToApply = (x, y, row, column) => {
-            this.getCellByQuerySelectorWithDatasetAttributes(x, y).firstChild.value = values[row][column];
+            let cell = this.getCellByQuerySelectorWithDatasetAttributes(x, y)
+            if (cell) {
+                cell.firstChild.value = values[row][column];
+            }
         };
 
         this.itterateThroughCellsInRangeAndApplyLogic(
@@ -361,12 +388,7 @@ export default class ExcelTable extends LightningElement {
         this.selectedAreaCoordinates.toX = this.selectedCellCoordinates.x + selectedRowsSize;
         this.selectedAreaCoordinates.fromY = this.selectedCellCoordinates.y;
         this.selectedAreaCoordinates.toY = this.selectedCellCoordinates.y + selectedColumnsSize;
-
-        this.hideContextMenu();
-        this.clearPreviouslyCopiedCellsHtml();
-        this.hideCopyAreaBorder();
     }
-
     // General
 
     getValuesBetweemRange({fromX, toX, fromY, toY}) {
@@ -401,9 +423,10 @@ export default class ExcelTable extends LightningElement {
     addCssClassAndDatasetToCellsBetweenRange({ fromX, toX, fromY, toY }, cssClassToAdd, datasetPropertyToSet) {
         let logicToApply = (x, y, xIndex, yIndex) => {
             let cell = this.getCellByQuerySelectorWithDatasetAttributes(x, y);
-            
-            cell.classList.add(cssClassToAdd);
-            cell.dataset[datasetPropertyToSet] = true;
+            if (cell) {
+                cell.classList.add(cssClassToAdd);
+                cell.dataset[datasetPropertyToSet] = true;
+            }
         };
 
         this.itterateThroughCellsInRangeAndApplyLogic(
@@ -437,7 +460,6 @@ export default class ExcelTable extends LightningElement {
     }
 
     getCellByQuerySelectorWithDatasetAttributes(x, y) {
-
         return this.template.querySelector(`[data-row="${x}"][data-column="${y}"]`);
     }
     

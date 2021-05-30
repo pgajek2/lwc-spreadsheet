@@ -1,5 +1,5 @@
 <template>
-      <table style="width:100%" oncontextmenu={handleContextMenu}>
+      <table style="width:100%" oncontextmenu={handleContextMenu} onkeypress={handleKeyPress} oncopy={handleCopy} onpaste={handlePaste}>
         <tr>
           <th></th>
           <th class="column-label">0</th>
@@ -45,8 +45,9 @@
       </table> 
 
       <div id="context-menu" class="menu-context">
-          <lightning-button variant="base" label="Copy" icon-name="utility:copy" data-action="copy" onclick={handleContextMenuAction}></lightning-button>
-          <lightning-button variant="base" label="Paste" icon-name="utility:paste" data-action="paste" onclick={handleContextMenuAction}></lightning-button>
+          <template for:each={contextMenuItems} for:item="contextMenuItem">
+              <lightning-button key={contextMenuItem.action} variant="base" label={contextMenuItem.label} icon-name={contextMenuItem.icon} data-action={contextMenuItem.action} onclick={contextMenuItem.actionHandler}></lightning-button>
+          </template>
       </div>
 
       <div class="copy-border"></div>
