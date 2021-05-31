@@ -1,4 +1,5 @@
-import { LightningElement } from 'lwc';
+import { LightningElement, api } from 'lwc';
+import { creteSnapshot, getPreviousState, hasHistory } from './memento';
 
 const COLUMNS = [
     { label: 'Label', fieldName: 'name', editable: true},
@@ -41,6 +42,8 @@ const CELL_COPIED = 'selected-copied-cell';
 
 export default class ExcelTable extends LightningElement {
 
+    @api showRowNumberColumn = false;	
+
     columns = COLUMNS;
     data = data;
     contextMenuItems = [
@@ -61,8 +64,9 @@ export default class ExcelTable extends LightningElement {
             return;
         }
         this.hideContextMenu();
-        document.addEventListener('keypress', this.handleKeypress.bind(this));
         this.hidePasteContextMenuItem();
+        this.hideUndoContextMenuItem();
+        document.addEventListener('keypress', this.handleKeypress.bind(this));
         this.isRendered = true;
     }
 
@@ -172,7 +176,15 @@ export default class ExcelTable extends LightningElement {
     }
 
     handleUndo(e) {
-        console.log('Undo')
+        let previosState = getPreviousState();
+        if (previosState && previosState.length > 0) {
+            previosState.forEach(cell => {
+                this.getCellByQuerySelectorWithDatasetAttributes(cell.x, cell.y).firstChild.value = cell.value;
+            });
+        }
+        if (!hasHistory()) {
+            this.hideUndoContextMenuItem();
+        }
         this.hideContextMenu();
     }
 
@@ -280,6 +292,14 @@ export default class ExcelTable extends LightningElement {
         this.template.querySelector('lightning-button[data-action="paste"]').classList.add('slds-hide');
     }
 
+    showUndoContextMenuItem() {
+        this.template.querySelector('lightning-button[data-action="undo"]').classList.remove('slds-hide');
+    }
+
+    hideUndoContextMenuItem() {
+        this.template.querySelector('lightning-button[data-action="undo"]').classList.add('slds-hide');
+    }
+
     setContextMenuPosition(positionX, positionY) {
         let contextMenuElement = this.template.querySelector('.menu-context');
 
@@ -360,12 +380,21 @@ export default class ExcelTable extends LightningElement {
         let selectedRowsSize = transformedCopyCoordinates.toX - transformedCopyCoordinates.fromX;
         let selectedColumnsSize = transformedCopyCoordinates.toY - transformedCopyCoordinates.fromY;
 
+        let oldData = [];
         let logicToApply = (x, y, row, column) => {
-            let cell = this.getCellByQuerySelectorWithDatasetAttributes(x, y)
+            let cell = this.getCellByQuerySelectorWithDatasetAttributes(x, y);
             if (cell) {
+                oldData.push({
+                    x: x,
+                    y: y,
+                    value: cell.firstChild.value
+                });
                 cell.firstChild.value = values[row][column];
             }
         };
+
+        creteSnapshot(oldData);
+        this.showUndoContextMenuItem();
 
         this.itterateThroughCellsInRangeAndApplyLogic(
             {

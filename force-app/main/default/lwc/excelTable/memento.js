@@ -1,14 +1,19 @@
 let changesHistory = [];
 
-const creteAreaValuesSnapshot = () => {
-
+const creteSnapshot = (state) => {
+    changesHistory.push(state);
 };
 
 const getPreviousState = () => {
-    return changesHistory[changesHistory.length - 1];
+    return changesHistory.pop();
+};
+
+const hasHistory = () => {
+    return changesHistory.length > 0;
 };
 
 export {
-    creteAreaValuesSnapshot,
-    getPreviousState
+    creteSnapshot,
+    getPreviousState,
+    hasHistory
 };

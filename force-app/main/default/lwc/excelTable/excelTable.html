@@ -1,7 +1,7 @@
 <template>
       <table style="width:100%" oncontextmenu={handleContextMenu} onkeypress={handleKeyPress} oncopy={handleCopy} onpaste={handlePaste}>
         <tr>
-          <th></th>
+          <th if:true={showRowNumberColumn}></th>
           <th class="column-label">0</th>
           <th class="column-label">1</th>
           <th class="column-label">0</th>
@@ -13,7 +13,7 @@
         </tr>
         <template for:each={data} for:item="item" for:index="index"> 
           <tr key={item.Id}>
-            <td class="row-number" key={data.test}>
+            <td class="row-number" if:true={showRowNumberColumn} key={data.test}>
               {index}
             </td>
             <td data-row={index} data-column="1" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>

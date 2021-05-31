@@ -10,4 +10,9 @@
         <target>lightning__RecordPage</target>
         <target>lightningCommunity__Default</target>
     </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__AppPage">
+            <property label="Show Row Number Column" name="showRowNumberColumn" type="Boolean" default="false"/>
+        </targetConfig>
+    </targetConfigs>
 </LightningComponentBundle>
