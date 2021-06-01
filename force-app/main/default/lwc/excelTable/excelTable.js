@@ -43,9 +43,35 @@ const CELL_COPIED = 'selected-copied-cell';
 export default class ExcelTable extends LightningElement {
 
     @api showRowNumberColumn = false;	
+    
+    _records = data;
+    _columns = COLUMNS;
 
-    columns = COLUMNS;
-    data = data;
+    @api set columns(columns) {
+        this._columns = columns;
+    }
+
+    get columns() {
+        return this._columns;
+    }
+
+    @api set records(records) {
+        this._records = records.map(record => {
+            return {
+                fields: this.columns.map(column => {
+                    return {
+                        fieldName: column.fieldName,
+                        value: record[column.fieldName] || " "
+                    }
+                })
+            }
+        })
+    }
+
+    get records() {
+        return this._records;
+    }
+
     contextMenuItems = [
         { label: 'Copy',  action: 'copy',  icon: 'utility:copy',  actionHandler: this.handleCopy.bind(this)  }, 
         { label: 'Paste', action: 'paste', icon: 'utility:paste', actionHandler: this.handlePaste.bind(this) },

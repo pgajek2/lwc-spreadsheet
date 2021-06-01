@@ -2,44 +2,20 @@
       <table style="width:100%" oncontextmenu={handleContextMenu} onkeypress={handleKeyPress} oncopy={handleCopy} onpaste={handlePaste}>
         <tr>
           <th if:true={showRowNumberColumn}></th>
-          <th class="column-label">0</th>
-          <th class="column-label">1</th>
-          <th class="column-label">0</th>
-          <th class="column-label">3</th>
-          <th class="column-label">4</th>
-          <th class="column-label">5</th>
-          <th class="column-label">6</th>
-          <th class="column-label">7</th>
+          <template for:each={columns} for:item="column">
+            <th key={column.fieldName} class="column-label">{column.label}</th>
+          </template>
         </tr>
-        <template for:each={data} for:item="item" for:index="index"> 
-          <tr key={item.Id}>
-            <td class="row-number" if:true={showRowNumberColumn} key={data.test}>
-              {index}
+        <template for:each={records} for:item="record" for:index="rowIndex"> 
+          <tr key={record}>
+            <td class="row-number" if:true={showRowNumberColumn} key={record}>
+              {rowIndex}
             </td>
-            <td data-row={index} data-column="1" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
-              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
-            </td>
-            <td data-row={index} data-column="2" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
-              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
-            </td>
-            <td data-row={index} data-column="3" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
-              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
-            </td>
-            <td data-row={index} data-column="4" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
-              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
-            </td>
-            <td data-row={index} data-column="5" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
-              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
-            </td>
-            <td data-row={index} data-column="6" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
-              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
-            </td>
-            <td data-row={index} data-column="7" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
-              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
-            </td>
-            <td data-row={index} data-column="8" ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
-              <input type='text' value={item.test} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
-            </td>
+            <template for:each={record.fields} for:item="field" for:index="columnIndex">
+              <td key={field.fieldName} data-row={rowIndex} data-column={columnIndex} ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
+                <input type='text' value={field.value} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
+              </td>
+            </template>
           </tr>
         </template>
       </table> 
