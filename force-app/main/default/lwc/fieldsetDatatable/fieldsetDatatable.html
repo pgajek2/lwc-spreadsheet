@@ -1,6 +1,15 @@
 <template>
-    <c-excel-table
-        records={data}
-        columns={columns}
-    ></c-excel-table>
+    <lightning-spinner alternative-text="Loading" size="medium" if:true={isLoading}></lightning-spinner>
+
+    <div class="fieldset-datatable-container">
+        <div class="control-buttons">
+            <lightning-button label="Reset" title="Reset" onclick={handleReset} icon-name="utility:refresh" icon-position="right" class="slds-m-left_x-small"></lightning-button>
+            <lightning-button variant="brand" label="Save" title="Save" onclick={handleSave} icon-name="utility:save" icon-position="right" class="slds-m-left_x-small"></lightning-button>
+        </div>
+        <c-excel-table
+            records={data}
+            columns={columns}
+            show-row-number-column={showRowNumberColumn}
+        ></c-excel-table>
+    </div>
 </template>

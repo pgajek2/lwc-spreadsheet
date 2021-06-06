@@ -1,41 +1,6 @@
 import { LightningElement, api } from 'lwc';
 import { creteSnapshot, getPreviousState, hasHistory } from './memento';
 
-const COLUMNS = [
-    { label: 'Label', fieldName: 'name', editable: true},
-    { label: 'Website', fieldName: 'website', type: 'url' },
-    { label: 'Phone', fieldName: 'phone', type: 'phone' },
-    { label: 'Balance', fieldName: 'amount', type: 'currency' },
-    { label: 'CloseAt', fieldName: 'closeAt', type: 'date' },
-];
-
-const data = [
-    {Id: '12', test: '0001'},
-    {Id: '123', test: '0002'},
-    {Id: '14', test: '0003'},
-    {Id: '125', test: '0004'},
-    {Id: '16', test: '0005'},
-    {Id: '127', test: '0006'},
-    {Id: '18', test: '0007'},
-    {Id: '1212', test: '0008'},
-    {Id: '19', test: '0009'},
-    {Id: '12df', test: '0010'},
-    {Id: '1df', test: '0011'},
-    {Id: '12s', test: '0012'},
-    {Id: '1eea', test: '0013'},
-    {Id: '12dc', test: '0014'},
-    {Id: '14t', test: '0015'},
-    {Id: '12jk', test: '0016'},
-    {Id: '1h', test: '0017'},
-    {Id: '12ghj', test: '0018'},
-    {Id: 'nn1', test: '0019'},
-    {Id: '12hj', test: '0020'},
-    {Id: '1hj', test: '0021'},
-    {Id: '12gh', test: '0022'},
-    {Id: '1nb', test: '0023'},
-    {Id: '12hj', test: '0024'}
-]
-
 const CELL_SELECTED_FROM_RANGE = 'selected-cell';
 const CELL_SELECTED = 'selected-cell-border';
 const CELL_COPIED = 'selected-copied-cell';
@@ -44,8 +9,8 @@ export default class ExcelTable extends LightningElement {
 
     @api showRowNumberColumn = false;	
     
-    _records = data;
-    _columns = COLUMNS;
+    _records = [];
+    _columns = [];
 
     @api set columns(columns) {
         this._columns = columns;
@@ -56,12 +21,14 @@ export default class ExcelTable extends LightningElement {
     }
 
     @api set records(records) {
-        this._records = records.map(record => {
+        this._records = records.map(record => { 
             return {
+                recordId: record.Id,
                 fields: this.columns.map(column => {
                     return {
+                        key: this.createUUID(),
                         fieldName: column.fieldName,
-                        value: record[column.fieldName] || " "
+                        value: record[column.fieldName] || ""
                     }
                 })
             }
@@ -85,6 +52,16 @@ export default class ExcelTable extends LightningElement {
     selectedAreaCoordinates = {}; //this with blue background
     copyCoordinates = {};
 
+    @api getEditedData() {
+        return this.records;
+    }
+
+    /* GETTERS */
+
+    get hasRecords() {
+        return this.records && this.records.length > 0;
+    }
+
     renderedCallback() {
         if (this.isRendered) {
             return;
@@ -96,7 +73,20 @@ export default class ExcelTable extends LightningElement {
         this.isRendered = true;
     }
 
+    createUUID() {
+        var dt = new Date().getTime();
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = (dt + Math.random()*16)%16 | 0;
+            dt = Math.floor(dt/16);
+            return (c=='x' ? r :(r&0x3|0x8)).toString(16);
+        });
+        return uuid;
+    }
     // handlers 
+
+    handleResize(e) {
+        console.log('handleResize', e)
+    }
 
     handleKeypress(e) {
         if (!this.isStartTyping) {
@@ -104,10 +94,10 @@ export default class ExcelTable extends LightningElement {
                 this.selectedCellCoordinates.x, 
                 this.selectedCellCoordinates.y
             ).firstChild.disabled = false;
-            this.getCellByQuerySelectorWithDatasetAttributes(
-                this.selectedCellCoordinates.x, 
-                this.selectedCellCoordinates.y
-            ).firstChild.select();
+            // this.getCellByQuerySelectorWithDatasetAttributes(
+            //     this.selectedCellCoordinates.x, 
+            //     this.selectedCellCoordinates.y
+            // ).firstChild.select();
             this.getCellByQuerySelectorWithDatasetAttributes(
                 this.selectedCellCoordinates.x, 
                 this.selectedCellCoordinates.y
@@ -140,26 +130,34 @@ export default class ExcelTable extends LightningElement {
         e.preventDefault();
 
         this.showContextMenu(); 
-        this.setContextMenuPosition(e.pageX, e.pageY);
+        this.setContextMenuPosition(e.clientX, e.clientY);
     }
 
     handleDoubleClick(e) {
-        e.target.disabled = false;
+       // e.target.disabled = false;
         e.target.focus();
     }
 
     handleFocusOut(e) {
-        e.target.disabled = true;
+       // e.target.disabled = true;
+       console.log('out')
         this.isStartTyping = false;
     }
 
     handleCellValueChange(e) {
-        console.log('handleCellValueChange');
+ 
+        let recordId = e.currentTarget?.parentElement?.parentElement?.dataset?.recordId;
+        let fieldName = e.currentTarget?.parentElement?.dataset?.field;
+        let value = e.currentTarget.innerText;
+
+        this.updateRecordsValue(recordId, fieldName, value);
     }
 
     handleDown(e) {
         switch (e.which) {
             case 1: //left click
+                this.hideContextMenu();
+
                 this.clearPreviouslySelectedArea();
                 this.clearPreviouslySelectedCell();
 
@@ -205,7 +203,7 @@ export default class ExcelTable extends LightningElement {
         let previosState = getPreviousState();
         if (previosState && previosState.length > 0) {
             previosState.forEach(cell => {
-                this.getCellByQuerySelectorWithDatasetAttributes(cell.x, cell.y).firstChild.value = cell.value;
+                this.getCellByQuerySelectorWithDatasetAttributes(cell.x, cell.y).firstChild.innerText = cell.value;
             });
         }
         if (!hasHistory()) {
@@ -401,7 +399,7 @@ export default class ExcelTable extends LightningElement {
 
     pasteValuesToSelectedArea() {
         let transformedCopyCoordinates = this.getCopiedAreaNormalizedCoordinates();
-        let values = this.getValuesBetweemRange(transformedCopyCoordinates );
+        let values = this.getValuesBetweemRange(transformedCopyCoordinates);
 
         let selectedRowsSize = transformedCopyCoordinates.toX - transformedCopyCoordinates.fromX;
         let selectedColumnsSize = transformedCopyCoordinates.toY - transformedCopyCoordinates.fromY;
@@ -413,9 +411,15 @@ export default class ExcelTable extends LightningElement {
                 oldData.push({
                     x: x,
                     y: y,
-                    value: cell.firstChild.value
+                    value: cell.firstChild.innerText
                 });
-                cell.firstChild.value = values[row][column];
+                cell.firstChild.innerText = values[row][column];
+
+                let recordId = cell.firstChild?.parentElement?.parentElement?.dataset?.recordId;
+                let fieldName = cell.firstChild?.parentElement?.dataset?.field;
+                let value = cell.firstChild?.innerText;
+
+                this.updateRecordsValue(recordId, fieldName, value);
             }
         };
 
@@ -454,7 +458,7 @@ export default class ExcelTable extends LightningElement {
                 values[xIndex] = [];
             }
             values[xIndex].push(
-                this.getCellByQuerySelectorWithDatasetAttributes(x, y).firstChild.value
+                this.getCellByQuerySelectorWithDatasetAttributes(x, y).lastChild.innerText
             );
         };
 
@@ -551,5 +555,18 @@ export default class ExcelTable extends LightningElement {
             a++;
         }
         return numbersInRange;
+    }
+
+    updateRecordsValue(recordId, fieldName, value) {
+        this._records.find(record => record.recordId === recordId)
+                     .fields
+                     .find(field => field.fieldName === fieldName)
+                     .value = value;
+    }
+
+    fireUnsavedChangesEvent() {
+        this.dispatchEvent(
+            new CustomEvent('unsavedchange')
+        );
     }
 }

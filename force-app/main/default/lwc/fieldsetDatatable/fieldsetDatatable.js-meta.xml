@@ -11,9 +11,11 @@
         <target>lightningCommunity__Default</target>
     </targets>
     <targetConfigs>
-        <targetConfig targets="lightning__AppPage,lightningCommunity__Default">
+        <targetConfig targets="lightning__HomePage,lightning__RecordPage,lightning__AppPage,lightningCommunity__Default">
+            <property label="Parent Record Field API" name="parentRecordFieldApi" type="String" description="Field API to parent record"/>
             <property label="Object API Name" name="objectName" type="String" default=""/>
             <property label="FieldSet API Name" name="fieldSetName" type="String" default=""/>
+            <property label="Show Row Number Column" name="showRowNumberColumn" type="Boolean" default="false"/>
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>

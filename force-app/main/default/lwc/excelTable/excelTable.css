@@ -1,5 +1,6 @@
-.container {
-  display: flex;
+table {
+  border-collapse: collapse;
+  border-spacing: 0px;
 }
 table,
 th,
@@ -8,15 +9,26 @@ td {
   border-collapse: collapse;
   user-select: none;
 }
+.resize-column {
+  resize: horizontal;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0px;
+  padding: 0px;
+  min-width: 50px;
+  max-width: 600px;
+  min-height: 40px;
+}
+table th {
+  min-width: 50px;
+  max-width: 600px;
+}
 table td {
   position: relative;
 }
-table td {
-  height: 30px;
-}
-
-table td input {
-  position: absolute;
+/* table td input {
   display: block;
   top: 0;
   left: 0;
@@ -26,13 +38,31 @@ table td input {
   border: none;
   padding: 9px;
   box-sizing: border-box;
+  background: white;
+  resize: vertical;
 }
+table td textarea {
+  display: block;
+  top: 0;
+  left: 0;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  border: none;
+  padding: 9px;
+  box-sizing: border-box;
+  background: white; 
+  resize: vertical;
+} */
 
 td:hover {
   cursor: default;
 }
 .selected-cell {
   background: #e7f0fd;
+}
+.selected-cell textarea {
+  background: #e7f0fd !important;
 }
 .selected-cell-border {
   border: 2px solid #1a73e8 !important;
@@ -45,7 +75,7 @@ td:hover {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  box-shadow: 1px 1px 9px 1px rgb(0, 0, 0 , 0.1);
+  box-shadow: 1px 1px 9px 1px rgb(0, 0, 0, 0.1);
 }
 
 .selected-copied-cell {
@@ -63,4 +93,19 @@ td:hover {
   background: #f8f9fa;
   width: 30px;
   text-align: center;
+}
+
+
+.no-records-found {
+  padding: 20px;
+  margin: auto;
+  text-align: center;
+  font-size: 14px;
+  border-right: 1px solid #e2e3e3;
+  border-left: 1px solid #e2e3e3;
+  border-bottom: 1px solid #e2e3e3;
+}
+
+.cell {
+  padding: 3px;
 }

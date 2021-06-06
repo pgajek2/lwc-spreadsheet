@@ -1,0 +1,9 @@
+.fieldset-datatable-container {
+    display: flex;
+    flex-direction: column;
+}
+.control-buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin: 10px 0;
+}

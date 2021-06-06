@@ -2,10 +2,10 @@ public with sharing class UniversalDataProvider {
 
 
     @AuraEnabled
-    public static List<sObject> getRecords(String objectName, String fieldSetName) {
+    public static List<sObject> getRecords(String parentId, String parentFiledApi, String objectName, String fieldSetName) {
         try {
             return Database.query(
-                constructQueryUsingObjectNameAndFieldSet(objectName, fieldSetName)
+                constructQueryUsingObjectNameAndFieldSet(parentId, parentFiledApi, objectName, fieldSetName)
             );
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());
@@ -31,14 +31,23 @@ public with sharing class UniversalDataProvider {
         }
     }
 
+    @AuraEnabled
+    public static void saveRecords(List<sObject> records){
+        try {
+            update records;
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
 
-    public static String constructQueryUsingObjectNameAndFieldSet(String objectName, String fieldSetName) {
+    public static String constructQueryUsingObjectNameAndFieldSet(String parentId, String parentFiledApi, String objectName, String fieldSetName) {
         String query = 'SELECT ';
 
         for (Schema.FieldSetMember field : getFieldSetFieldsForObject(objectName, fieldSetName)) {
             query += field.getFieldPath() + ', ';
         }
         query += 'Id FROM ' + objectName;
+        query += ' WHERE ' + parentFiledApi + ' = :parentId';
 
         return query;
     }

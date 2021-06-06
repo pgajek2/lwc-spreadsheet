@@ -1,25 +1,46 @@
 <template>
       <table style="width:100%" oncontextmenu={handleContextMenu} onkeypress={handleKeyPress} oncopy={handleCopy} onpaste={handlePaste}>
+        
+        <!-- Columns -->
         <tr>
           <th if:true={showRowNumberColumn}></th>
           <template for:each={columns} for:item="column">
-            <th key={column.fieldName} class="column-label">{column.label}</th>
+            <th key={column.fieldName} class="column-label">
+              <div class="resize-column" data-field={column.fieldName}>{column.label}</div>
+            </th>
           </template>
         </tr>
-        <template for:each={records} for:item="record" for:index="rowIndex"> 
-          <tr key={record}>
-            <td class="row-number" if:true={showRowNumberColumn} key={record}>
-              {rowIndex}
-            </td>
-            <template for:each={record.fields} for:item="field" for:index="columnIndex">
-              <td key={field.fieldName} data-row={rowIndex} data-column={columnIndex} ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
-                <input type='text' value={field.value} ondblclick={handleDoubleClick} onfocusout={handleFocusOut} onchange={handleCellValueChange} disabled/>
+
+        <template if:true={hasRecords}>
+          <!-- Rows  -->
+          <template for:each={records} for:item="record" for:index="rowIndex"> 
+            <tr key={record.recordId} data-record-id={record.recordId}>
+              <!-- Row Number -->
+              <td class="row-number" if:true={showRowNumberColumn} key={record}>
+                {rowIndex}
               </td>
-            </template>
-          </tr>
+              <!-- Fieldset row -->
+              <template for:each={record.fields} for:item="field" for:index="columnIndex">
+                <td key={field.key} data-field={field.fieldName} data-row={rowIndex} data-column={columnIndex} ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>          
+                  <div class="cell" contenteditable ondblclick={handleDoubleClick} onfocusout={handleFocusOut} oninput={handleCellValueChange} onresize={handleResize}>
+                    {field.value}
+                  </div>                     
+                </td>
+              </template>
+            </tr>
+          </template>
         </template>
+        
       </table> 
 
+       <!-- No Records -->
+       <template if:false={hasRecords}>
+          <div class="no-records-found">
+            No records found.
+          </div>
+      </template>
+
+      <!-- Context Menu -->
       <div id="context-menu" class="menu-context">
           <template for:each={contextMenuItems} for:item="contextMenuItem">
               <lightning-button key={contextMenuItem.action} variant="base" label={contextMenuItem.label} icon-name={contextMenuItem.icon} data-action={contextMenuItem.action} onclick={contextMenuItem.actionHandler}></lightning-button>
