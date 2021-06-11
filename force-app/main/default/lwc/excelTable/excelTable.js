@@ -1,10 +1,9 @@
 import { LightningElement, api } from 'lwc';
 import { creteSnapshot, getPreviousState, hasHistory } from './memento';
+import { createUUID } from './utils';
 
-const CELL_SELECTED_FROM_RANGE = 'selected-cell';
-const CELL_SELECTED = 'selected-cell-border';
-const CELL_COPIED = 'selected-copied-cell';
-
+const SELECTED_CELL_DATASET = 'selectedcell';
+const SELECTED_AREA_CELL_DATASET = 'selected';
 export default class ExcelTable extends LightningElement {
 
     @api showRowNumberColumn = false;	
@@ -26,7 +25,7 @@ export default class ExcelTable extends LightningElement {
                 recordId: record.Id,
                 fields: this.columns.map(column => {
                     return {
-                        key: this.createUUID(),
+                        key: createUUID(),
                         fieldName: column.fieldName,
                         value: record[column.fieldName] || ""
                     }
@@ -56,11 +55,13 @@ export default class ExcelTable extends LightningElement {
         return this.records;
     }
 
-    /* GETTERS */
+    // getters
 
     get hasRecords() {
         return this.records && this.records.length > 0;
     }
+
+    // lifecycle hooks
 
     renderedCallback() {
         if (this.isRendered) {
@@ -73,16 +74,11 @@ export default class ExcelTable extends LightningElement {
         this.isRendered = true;
     }
 
-    createUUID() {
-        var dt = new Date().getTime();
-        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = (dt + Math.random()*16)%16 | 0;
-            dt = Math.floor(dt/16);
-            return (c=='x' ? r :(r&0x3|0x8)).toString(16);
-        });
-        return uuid;
-    }
     // handlers 
+
+    handleColumnSortClick(e) {
+        console.log('SORT!')
+    }
 
     handleResize(e) {
         console.log('handleResize', e)
@@ -90,18 +86,18 @@ export default class ExcelTable extends LightningElement {
 
     handleKeypress(e) {
         if (!this.isStartTyping) {
-            this.getCellByQuerySelectorWithDatasetAttributes(
-                this.selectedCellCoordinates.x, 
-                this.selectedCellCoordinates.y
-            ).firstChild.disabled = false;
+            // this.getCellByQuerySelectorWithDatasetAttributes(
+            //     this.selectedCellCoordinates.x, 
+            //     this.selectedCellCoordinates.y
+            // ).firstChild.disabled = false;
             // this.getCellByQuerySelectorWithDatasetAttributes(
             //     this.selectedCellCoordinates.x, 
             //     this.selectedCellCoordinates.y
             // ).firstChild.select();
-            this.getCellByQuerySelectorWithDatasetAttributes(
-                this.selectedCellCoordinates.x, 
-                this.selectedCellCoordinates.y
-            ).firstChild.focus();
+            // this.getCellByQuerySelectorWithDatasetAttributes(
+            //     this.selectedCellCoordinates.x, 
+            //     this.selectedCellCoordinates.y
+            // ).firstChild.focus();
             this.isStartTyping = true;
         }
     }
@@ -134,13 +130,10 @@ export default class ExcelTable extends LightningElement {
     }
 
     handleDoubleClick(e) {
-       // e.target.disabled = false;
         e.target.focus();
     }
 
     handleFocusOut(e) {
-       // e.target.disabled = true;
-       console.log('out')
         this.isStartTyping = false;
     }
 
@@ -223,12 +216,11 @@ export default class ExcelTable extends LightningElement {
     }
 
     clearPreviouslySelectedCell() {
-        this.removeCssClassAndDatasetFromCellsBetweenRange(CELL_SELECTED, 'selectedcell');
+        this.removeDatasetFromCellsBetweenRange(SELECTED_CELL_DATASET);
     }
 
     markSelectedCellHtml(cell) {
-        cell.classList.add(CELL_SELECTED);
-        cell.dataset.selectedcell = true;
+        cell.dataset[SELECTED_CELL_DATASET] = true;
     }
 
     isCurremtCellInSelectedArea(currentCell) {
@@ -262,7 +254,7 @@ export default class ExcelTable extends LightningElement {
 
     clearPreviouslySelectedArea() {
         this.cleareSelectedAreaEndCoordinates();
-        this.removeCssClassAndDatasetFromCellsBetweenRange(CELL_SELECTED_FROM_RANGE, 'selected');
+        this.removeDatasetFromCellsBetweenRange(SELECTED_AREA_CELL_DATASET);
     }
 
     recalculateAndMarkSelectedArea(currentCell) {
@@ -279,7 +271,7 @@ export default class ExcelTable extends LightningElement {
     }
 
     markAreaCellsBetweenCoordinates(coordinates) {
-        this.addCssClassAndDatasetToCellsBetweenRange(coordinates, CELL_SELECTED_FROM_RANGE, 'selected');
+        this.addDatasetToCellsBetweenRange(coordinates, SELECTED_AREA_CELL_DATASET);
     }
 
     startAreaSelection() {
@@ -334,9 +326,8 @@ export default class ExcelTable extends LightningElement {
     // Copy 
 
     markCellsAsCopiedWithCssClassAndDatasetProperty() {
-        this.addCssClassAndDatasetToCellsBetweenRange(
+        this.addDatasetToCellsBetweenRange(
             this.getCopiedAreaNormalizedCoordinates(), 
-            CELL_COPIED, 
             'copied'
         );
     }
@@ -346,7 +337,7 @@ export default class ExcelTable extends LightningElement {
     }
 
     clearPreviouslyCopiedCellsHtml() {
-        this.removeCssClassAndDatasetFromCellsBetweenRange(CELL_COPIED, 'copied');
+        this.removeDatasetFromCellsBetweenRange('copied');
     }
 
     addDashedBorderToCopiedArea() {
@@ -408,16 +399,18 @@ export default class ExcelTable extends LightningElement {
         let logicToApply = (x, y, row, column) => {
             let cell = this.getCellByQuerySelectorWithDatasetAttributes(x, y);
             if (cell) {
+                let innerDiv = cell.firstChild;
                 oldData.push({
                     x: x,
                     y: y,
-                    value: cell.firstChild.innerText
+                    value: innerDiv.innerText
                 });
-                cell.firstChild.innerText = values[row][column];
 
-                let recordId = cell.firstChild?.parentElement?.parentElement?.dataset?.recordId;
-                let fieldName = cell.firstChild?.parentElement?.dataset?.field;
-                let value = cell.firstChild?.innerText;
+                innerDiv.textContent = values[row][column];
+
+                let recordId = innerDiv?.parentElement?.parentElement?.dataset?.recordId;
+                let fieldName = innerDiv?.parentElement?.dataset?.field;
+                let value = values[row][column];
 
                 this.updateRecordsValue(recordId, fieldName, value);
             }
@@ -479,11 +472,10 @@ export default class ExcelTable extends LightningElement {
         }; // coordinates order in asc order
     }
 
-    addCssClassAndDatasetToCellsBetweenRange({ fromX, toX, fromY, toY }, cssClassToAdd, datasetPropertyToSet) {
+    addDatasetToCellsBetweenRange({ fromX, toX, fromY, toY }, datasetPropertyToSet) {
         let logicToApply = (x, y, xIndex, yIndex) => {
             let cell = this.getCellByQuerySelectorWithDatasetAttributes(x, y);
             if (cell) {
-                cell.classList.add(cssClassToAdd);
                 cell.dataset[datasetPropertyToSet] = true;
             }
         };
@@ -507,19 +499,18 @@ export default class ExcelTable extends LightningElement {
         }
     }
 
-    removeCssClassAndDatasetFromCellsBetweenRange(cssClassToRemove, datasetPropertyToClear) {
+    removeDatasetFromCellsBetweenRange(datasetPropertyToClear) {
         let itemsToClrear = this.template.querySelectorAll(`[data-${datasetPropertyToClear}="true"]`);
 
         if (itemsToClrear && itemsToClrear.length > 0) {
             itemsToClrear.forEach(cell => {
-                cell.classList.remove(cssClassToRemove);
                 cell.dataset[datasetPropertyToClear] = false;
             });
         }
     }
 
     getCellByQuerySelectorWithDatasetAttributes(x, y) {
-        return this.template.querySelector(`[data-row="${x}"][data-column="${y}"]`);
+        return this.template.querySelector(`td[data-row="${x}"][data-column="${y}"]`);
     }
     
     getCellCoordinates(cell) {

@@ -5,8 +5,8 @@
         <tr>
           <th if:true={showRowNumberColumn}></th>
           <template for:each={columns} for:item="column">
-            <th key={column.fieldName} class="column-label">
-              <div class="resize-column" data-field={column.fieldName}>{column.label}</div>
+            <th key={column.fieldName} onclick={handleColumnSortClick} class="column-label">
+              <div class="resize-column" onclick={handleColumnSortClick} data-field={column.fieldName}>{column.label}</div>
             </th>
           </template>
         </tr>
@@ -22,7 +22,7 @@
               <!-- Fieldset row -->
               <template for:each={record.fields} for:item="field" for:index="columnIndex">
                 <td key={field.key} data-field={field.fieldName} data-row={rowIndex} data-column={columnIndex} ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>          
-                  <div class="cell" contenteditable ondblclick={handleDoubleClick} onfocusout={handleFocusOut} oninput={handleCellValueChange} onresize={handleResize}>
+                  <div class="cell" contenteditable role="textbox" ondblclick={handleDoubleClick} onfocusout={handleFocusOut} oninput={handleCellValueChange} onresize={handleResize}>
                     {field.value}
                   </div>                     
                 </td>

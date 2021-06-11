@@ -28,45 +28,11 @@ table th {
 table td {
   position: relative;
 }
-/* table td input {
-  display: block;
-  top: 0;
-  left: 0;
-  margin: 0;
-  height: 100%;
-  width: 100%;
-  border: none;
-  padding: 9px;
-  box-sizing: border-box;
-  background: white;
-  resize: vertical;
-}
-table td textarea {
-  display: block;
-  top: 0;
-  left: 0;
-  margin: 0;
-  height: 100%;
-  width: 100%;
-  border: none;
-  padding: 9px;
-  box-sizing: border-box;
-  background: white; 
-  resize: vertical;
-} */
 
 td:hover {
   cursor: default;
 }
-.selected-cell {
-  background: #e7f0fd;
-}
-.selected-cell textarea {
-  background: #e7f0fd !important;
-}
-.selected-cell-border {
-  border: 2px solid #1a73e8 !important;
-}
+
 
 .menu-context {
   padding: 5px 20px;
@@ -78,9 +44,6 @@ td:hover {
   box-shadow: 1px 1px 9px 1px rgb(0, 0, 0, 0.1);
 }
 
-.selected-copied-cell {
-  /* border: 1px dashed #1a73e8; */
-}
 .copy-border {
   border: 2px dashed #1a73e8;
   position: absolute;
@@ -108,4 +71,14 @@ td:hover {
 
 .cell {
   padding: 3px;
+}
+
+/* Refactored CSSes */
+
+td[data-selected="true"] {
+  background: #e7f0fd;
+}
+
+td[data-selectedcell="true"] {
+  border: 2px solid #1a73e8 !important;
 }
