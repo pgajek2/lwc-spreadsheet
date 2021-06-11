@@ -82,3 +82,7 @@ td[data-selected="true"] {
 td[data-selectedcell="true"] {
   border: 2px solid #1a73e8 !important;
 }
+
+.sorted-column {
+  background: khaki;
+}

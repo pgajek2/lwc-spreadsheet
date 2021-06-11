@@ -1,6 +1,8 @@
 import { LightningElement, api } from 'lwc';
-import { creteSnapshot, getPreviousState, hasHistory } from './memento';
-import { createUUID } from './utils';
+import { creteSnapshot, getPreviousState, hasHistory } from './excelTableServices/memento';
+import { createUUID } from './excelTableServices/utils';
+import { itterateThroughCellsInRangeAndApplyLogic, getCoordinatesBetweenPoints } from './excelTableServices/cellService';
+import { sortRecordsByField, setSortedByColumnStyle }  from './excelTableServices/sortService';
 
 const SELECTED_CELL_DATASET = 'selectedcell';
 const SELECTED_AREA_CELL_DATASET = 'selected';
@@ -11,9 +13,6 @@ export default class ExcelTable extends LightningElement {
     _records = [];
     _orginalRecords = [];
     _columns = [];
-    defaultSortDirection = 'asc';
-    sortDirection = 'asc';
-    sortedBy;
 
     @api set columns(columns) {
         this._columns = columns;
@@ -83,30 +82,10 @@ export default class ExcelTable extends LightningElement {
     // handlers 
 
     handleColumnSortClick(event) {
-        const sortedBy = event.target.dataset.field;
-        const sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-        const cloneData = [...this._orginalRecords];
+        const sortedBy = event.target.dataset.field
 
-        cloneData.sort(this.sortBy(sortedBy, sortDirection === 'asc' ? 1 : -1));
-        this.records = cloneData;
-        this.sortDirection = sortDirection;
-        this.sortedBy = sortedBy;
-    }
-
-    sortBy(field, reverse, primer) {
-        const key = primer
-            ? function(x) {
-                  return primer(x[field]);
-              }
-            : function(x) {
-                  return x[field];
-              };
-
-        return function(a, b) {
-            a = key(a);
-            b = key(b);
-            return reverse * ((a > b) - (b > a));
-        };
+        sortRecordsByField(this, sortedBy); //TODO pass only proxy 
+        setSortedByColumnStyle(this, sortedBy);  //TODO pass only proxy 
     }
 
     handleResize(e) {
@@ -256,8 +235,8 @@ export default class ExcelTable extends LightningElement {
         let { fromX, toX, fromY, toY } = this.getSelectedAreaNormalizedCoordinates();
         let { cellXPosition, cellYPosition } = this.getCellCoordinates(currentCell);
 
-        return this.getCoordinatesBetweenPoints(fromX, toX).includes(cellXPosition) 
-            && this.getCoordinatesBetweenPoints(fromY, toY).includes(cellYPosition)
+        return getCoordinatesBetweenPoints(fromX, toX).includes(cellXPosition) 
+            && getCoordinatesBetweenPoints(fromY, toY).includes(cellYPosition)
     }
 
     // Selected Area
@@ -402,7 +381,7 @@ export default class ExcelTable extends LightningElement {
             }
         };
 
-        this.itterateThroughCellsInRangeAndApplyLogic(
+        itterateThroughCellsInRangeAndApplyLogic(
             copyCoordinates, 
             calculateCopiedAreaSize.bind(this)
         );
@@ -448,7 +427,7 @@ export default class ExcelTable extends LightningElement {
         creteSnapshot(oldData);
         this.showUndoContextMenuItem();
 
-        this.itterateThroughCellsInRangeAndApplyLogic(
+        itterateThroughCellsInRangeAndApplyLogic(
             {
                 fromX: this.selectedCellCoordinates.x,
                 toX: this.selectedCellCoordinates.x + selectedRowsSize,
@@ -484,7 +463,7 @@ export default class ExcelTable extends LightningElement {
             );
         };
 
-        this.itterateThroughCellsInRangeAndApplyLogic(
+        itterateThroughCellsInRangeAndApplyLogic(
             { fromX, toX, fromY, toY }, 
             logicToApply.bind(this)
         );
@@ -509,23 +488,10 @@ export default class ExcelTable extends LightningElement {
             }
         };
 
-        this.itterateThroughCellsInRangeAndApplyLogic(
+        itterateThroughCellsInRangeAndApplyLogic(
             { fromX, toX, fromY, toY }, 
             logicToApply.bind(this)
         );
-    }
-
-    itterateThroughCellsInRangeAndApplyLogic({ fromX, toX, fromY, toY }, logicToApply) {
-        let xList = this.getCoordinatesBetweenPoints(fromX, toX);
-        let yList = this.getCoordinatesBetweenPoints(fromY, toY);
-
-        if (xList.length > 0 && yList.length > 0) {
-            xList.forEach((x, xIndex) => {
-                yList.forEach((y, yIndex) => {
-                    logicToApply(x, y, xIndex, yIndex);
-                });
-            });
-        }
     }
 
     removeDatasetFromCellsBetweenRange(datasetPropertyToClear) {
@@ -567,22 +533,28 @@ export default class ExcelTable extends LightningElement {
         );
     }
 
-    getCoordinatesBetweenPoints(a, b) {
-        let numbersInRange = [];
-
-        while (a <= b) {
-            numbersInRange.push(a);
-            a++;
-        }
-        return numbersInRange;
-    }
-
     updateRecordsValue(recordId, fieldName, value) {
         this._records.find(record => record.recordId === recordId)
                      .fields
                      .find(field => field.fieldName === fieldName)
                      .value = value;
         this._orginalRecords.find(record => record.Id === recordId)[fieldName] = value;
+    }
+
+    showSpinner() {
+        this.dispatchEvent(
+            new CustomEvent('loading', {
+                detail: true    
+            })
+        );
+    }
+
+    hideSpinner() {
+        this.dispatchEvent(
+            new CustomEvent('loading', {
+                detail: false    
+            })
+        );
     }
 
     fireUnsavedChangesEvent() {

@@ -124,4 +124,13 @@ export default class FieldsetDatatable extends LightningElement {
     handleReset() {
         this.getRecordsForObject();
     }
+
+    handleLoading(e) {
+        if (e.detail) {
+            this.showSpinner();
+            return;
+        }
+
+        this.hideSpinner();
+    }
 }
