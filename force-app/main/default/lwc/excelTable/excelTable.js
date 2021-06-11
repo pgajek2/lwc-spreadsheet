@@ -9,7 +9,11 @@ export default class ExcelTable extends LightningElement {
     @api showRowNumberColumn = false;	
     
     _records = [];
+    _orginalRecords = [];
     _columns = [];
+    defaultSortDirection = 'asc';
+    sortDirection = 'asc';
+    sortedBy;
 
     @api set columns(columns) {
         this._columns = columns;
@@ -20,6 +24,8 @@ export default class ExcelTable extends LightningElement {
     }
 
     @api set records(records) {
+        this._orginalRecords = JSON.parse(JSON.stringify(records));
+
         this._records = records.map(record => { 
             return {
                 recordId: record.Id,
@@ -76,8 +82,32 @@ export default class ExcelTable extends LightningElement {
 
     // handlers 
 
-    handleColumnSortClick(e) {
-        console.log('SORT!')
+    handleColumnSortClick(event) {
+    //const { fieldName: sortedBy, sortDirection } = event.detail;
+        const sortedBy = event.target.dataset.field;
+        const sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        const cloneData = [...this._orginalRecords];
+
+        cloneData.sort(this.sortBy(sortedBy, sortDirection === 'asc' ? 1 : -1));
+        this.records = cloneData;
+        this.sortDirection = sortDirection;
+        this.sortedBy = sortedBy;
+    }
+
+    sortBy(field, reverse, primer) {
+        const key = primer
+            ? function(x) {
+                  return primer(x[field]);
+              }
+            : function(x) {
+                  return x[field];
+              };
+
+        return function(a, b) {
+            a = key(a);
+            b = key(b);
+            return reverse * ((a > b) - (b > a));
+        };
     }
 
     handleResize(e) {
@@ -553,6 +583,7 @@ export default class ExcelTable extends LightningElement {
                      .fields
                      .find(field => field.fieldName === fieldName)
                      .value = value;
+        this._orginalRecords.find(record => record.Id === recordId)[fieldName] = value;
     }
 
     fireUnsavedChangesEvent() {

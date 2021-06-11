@@ -5,7 +5,7 @@
         <tr>
           <th if:true={showRowNumberColumn}></th>
           <template for:each={columns} for:item="column">
-            <th key={column.fieldName} onclick={handleColumnSortClick} class="column-label">
+            <th key={column.fieldName} class="column-label">
               <div class="resize-column" onclick={handleColumnSortClick} data-field={column.fieldName}>{column.label}</div>
             </th>
           </template>
