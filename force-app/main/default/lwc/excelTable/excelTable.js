@@ -83,7 +83,6 @@ export default class ExcelTable extends LightningElement {
     // handlers 
 
     handleColumnSortClick(event) {
-    //const { fieldName: sortedBy, sortDirection } = event.detail;
         const sortedBy = event.target.dataset.field;
         const sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
         const cloneData = [...this._orginalRecords];
@@ -433,10 +432,10 @@ export default class ExcelTable extends LightningElement {
                 oldData.push({
                     x: x,
                     y: y,
-                    value: innerDiv.innerText
+                    value: innerDiv.textContent
                 });
 
-                innerDiv.textContent = values[row][column];
+                innerDiv.firstChild.textContent = values[row][column];
 
                 let recordId = innerDiv?.parentElement?.parentElement?.dataset?.recordId;
                 let fieldName = innerDiv?.parentElement?.dataset?.field;
