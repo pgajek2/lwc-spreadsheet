@@ -28,10 +28,13 @@
             <template for:each={record.fields} for:item="field" for:index="columnIndex">
               <td key={field.key} data-field={field.fieldName} data-row={rowIndex} data-column={columnIndex}
                 ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
+
                 <div class="cell" contenteditable role="textbox" ondblclick={handleDoubleClick}
                   onfocusout={handleFocusOut} oninput={handleCellValueChange} onresize={handleResize}>
                   {field.value}
                 </div>
+
+                <!-- <div class="cell-action" onmousedown={handleCellActionKeyDown}></div> -->
               </td>
             </template>
           </tr>

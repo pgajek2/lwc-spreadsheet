@@ -50,6 +50,7 @@ export default class ExcelTable extends LightningElement {
     ];
 
     isAreaSelectionInProgress = false;
+    isCellCopied = false;
     isStartTyping = false;
     isRendered = false;
     selectedCellCoordinates = {}; //this with blue border
@@ -81,6 +82,10 @@ export default class ExcelTable extends LightningElement {
 
     // handlers 
 
+    handleCellActionKeyDown(e) {
+        this.isCellCopied = true;
+    }
+
     handleColumnSortClick(event) {
         const sortedBy = event.target.dataset.field
 
@@ -94,16 +99,22 @@ export default class ExcelTable extends LightningElement {
     }
 
     handleKeypress(e) {
-        if (!this.isStartTyping) {
-            // this.getCellByQuerySelectorWithDatasetAttributes(
-            //     this.selectedCellCoordinates.x, 
-            //     this.selectedCellCoordinates.y
-            // ).firstChild.select();
-            this.getCellByQuerySelectorWithDatasetAttributes(
-                this.selectedCellCoordinates.x, 
-                this.selectedCellCoordinates.y
-            ).firstChild.focus();
-            this.isStartTyping = true;
+        console.log(e)
+
+        switch (e.which) {
+            case 13: //enter
+                break;
+            default:
+                if (!this.isStartTyping) {
+
+                    this.getCellByQuerySelectorWithDatasetAttributes(
+                        this.selectedCellCoordinates.x, 
+                        this.selectedCellCoordinates.y
+                    ).firstChild.focus();
+
+                    this.isStartTyping = true;
+                }
+                break;
         }
     }
 
@@ -193,6 +204,22 @@ export default class ExcelTable extends LightningElement {
             case 1: //left click
                 this.finishAreaSelection();
                 this.setSelectedAreaEndCoordinates(e.currentTarget);
+                if (this.isCellCopied) {
+
+                    this.hideContextMenu();
+                    
+                    this.copyCoordinates.fromX = this.selectedCellCoordinates.x;
+                    this.copyCoordinates.toX = this.selectedCellCoordinates.x; 
+                    this.copyCoordinates.fromY = this.selectedCellCoordinates.y;
+                    this.copyCoordinates.toY = this.selectedCellCoordinates.y;
+
+                    this.pasteValuesToSelectedArea();
+                    this.clearPreviouslyCopiedCellsHtml();
+                    this.hideCopyAreaBorder();
+
+                    this.isCellCopied = false;
+                }
+                
                 break;
         }
     }

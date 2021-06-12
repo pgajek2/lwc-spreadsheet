@@ -51,9 +51,7 @@ td:hover {
   border-bottom: 1px solid #e2e3e3;
 }
 
-.cell {
-  padding: 3px;
-}
+
 
 /* Refactored CSSes */
 
@@ -67,6 +65,10 @@ table {
   background: white;
 }
 
+td {
+  height: 1px; /* div 100% height workaround */
+}
+
 td[data-selected="true"] {
   background: #e7f0fd;
 }
@@ -75,8 +77,29 @@ td[data-selectedcell="true"] {
   border: 2px solid #1a73e8 !important;
 }
 
-div[data-sorted-by-column="true"] {
-  background: khaki;
+.cell-action {
+  content: "";
+  width: 5px;
+  height: 5px;
+  background: #1a73e8;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: none;
+}
+
+.cell-action:hover {
+  cursor: pointer;
+}
+
+td[data-selectedcell="true"] .cell-action {
+  display: block;
+}
+
+.cell {
+  padding: 3px;
+  height: 100%;
+  word-break: break-all;
 }
 
 .sort-icon {
@@ -90,7 +113,7 @@ div[data-sorted-by-column="true"] .sort-icon{
 .column {
   text-align: center;
   background: #f8f9fa;
-  height: max-content;
+  height: 1px;
 }
 
 .column:hover {
@@ -108,4 +131,5 @@ div[data-sorted-by-column="true"] .sort-icon{
   min-width: 80px;
   max-width: 600px;
   min-height: 50px;
+  height: max-content;
 }

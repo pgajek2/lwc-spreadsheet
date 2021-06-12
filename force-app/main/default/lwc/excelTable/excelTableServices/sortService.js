@@ -4,8 +4,6 @@ let _sortDirection = 'asc';
 const setSortedBy = (sortedBy) => {
     _sortedBy = sortedBy;
     _sortDirection = _sortDirection === 'asc' ? 'desc' : 'asc';
-    console.log('_sortedBy', _sortedBy)
-    console.log('_sortDirection', _sortDirection)
 };
 
 const sortRecordsByField = (self) => {
