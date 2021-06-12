@@ -1,7 +1,3 @@
-table {
-  border-collapse: collapse;
-  border-spacing: 0px;
-}
 table,
 th,
 td {
@@ -9,18 +5,7 @@ td {
   border-collapse: collapse;
   user-select: none;
 }
-.resize-column {
-  resize: horizontal;
-  overflow: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0px;
-  padding: 0px;
-  min-width: 50px;
-  max-width: 600px;
-  min-height: 40px;
-}
+
 table th {
   min-width: 50px;
   max-width: 600px;
@@ -48,10 +33,7 @@ td:hover {
   border: 2px dashed #1a73e8;
   position: absolute;
 }
-.column-label {
-  text-align: center;
-  background: #f8f9fa;
-}
+
 .row-number {
   background: #f8f9fa;
   width: 30px;
@@ -75,6 +57,16 @@ td:hover {
 
 /* Refactored CSSes */
 
+.excel-table-container {
+  overflow-x: scroll;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0px;
+  background: white;
+}
+
 td[data-selected="true"] {
   background: #e7f0fd;
 }
@@ -83,6 +75,37 @@ td[data-selectedcell="true"] {
   border: 2px solid #1a73e8 !important;
 }
 
-.sorted-column {
+div[data-sorted-by-column="true"] {
   background: khaki;
+}
+
+.sort-icon {
+  display: none;
+}
+
+div[data-sorted-by-column="true"] .sort-icon{
+  display: block;
+}
+
+.column {
+  text-align: center;
+  background: #f8f9fa;
+  height: max-content;
+}
+
+.column:hover {
+  cursor: pointer;
+}
+
+.resize-column {
+  resize: horizontal;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0px;
+  padding: 3px;
+  min-width: 80px;
+  max-width: 600px;
+  min-height: 50px;
 }

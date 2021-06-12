@@ -61,7 +61,10 @@ export default class FieldsetDatatable extends LightningElement {
     saveUpdatedData(updatedData) {
         this.showSpinner();
 
-        let records = this.trnsformUpdatedData(updatedData);
+        let records = this.transformUpdatedData(updatedData);
+        
+        console.log(records);
+        
         saveRecords({
             records
         }).then(result => {
@@ -74,7 +77,7 @@ export default class FieldsetDatatable extends LightningElement {
         });
     }
 
-    trnsformUpdatedData(updatedData) {
+    transformUpdatedData(updatedData) {
         return updatedData.map(record => {
             let fields = record.fields.reduce((accumulator, field) => {
                 return {

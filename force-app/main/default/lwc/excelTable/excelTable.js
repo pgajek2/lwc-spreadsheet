@@ -2,7 +2,7 @@ import { LightningElement, api } from 'lwc';
 import { creteSnapshot, getPreviousState, hasHistory } from './excelTableServices/memento';
 import { createUUID } from './excelTableServices/utils';
 import { itterateThroughCellsInRangeAndApplyLogic, getCoordinatesBetweenPoints } from './excelTableServices/cellService';
-import { sortRecordsByField, setSortedByColumnStyle }  from './excelTableServices/sortService';
+import { sortRecordsByField, setSortedByColumnStyle, setSortedBy }  from './excelTableServices/sortService';
 
 const SELECTED_CELL_DATASET = 'selectedcell';
 const SELECTED_AREA_CELL_DATASET = 'selected';
@@ -84,8 +84,9 @@ export default class ExcelTable extends LightningElement {
     handleColumnSortClick(event) {
         const sortedBy = event.target.dataset.field
 
-        sortRecordsByField(this, sortedBy); //TODO pass only proxy 
-        setSortedByColumnStyle(this, sortedBy);  //TODO pass only proxy 
+        setSortedBy(sortedBy);
+        sortRecordsByField(this); //TODO pass only proxy 
+        setSortedByColumnStyle(this);  //TODO pass only proxy 
     }
 
     handleResize(e) {
@@ -97,15 +98,11 @@ export default class ExcelTable extends LightningElement {
             // this.getCellByQuerySelectorWithDatasetAttributes(
             //     this.selectedCellCoordinates.x, 
             //     this.selectedCellCoordinates.y
-            // ).firstChild.disabled = false;
-            // this.getCellByQuerySelectorWithDatasetAttributes(
-            //     this.selectedCellCoordinates.x, 
-            //     this.selectedCellCoordinates.y
             // ).firstChild.select();
-            // this.getCellByQuerySelectorWithDatasetAttributes(
-            //     this.selectedCellCoordinates.x, 
-            //     this.selectedCellCoordinates.y
-            // ).firstChild.focus();
+            this.getCellByQuerySelectorWithDatasetAttributes(
+                this.selectedCellCoordinates.x, 
+                this.selectedCellCoordinates.y
+            ).firstChild.focus();
             this.isStartTyping = true;
         }
     }
