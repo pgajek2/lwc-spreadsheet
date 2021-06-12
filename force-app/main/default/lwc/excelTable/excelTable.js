@@ -204,18 +204,42 @@ export default class ExcelTable extends LightningElement {
             case 1: //left click
                 this.finishAreaSelection();
                 this.setSelectedAreaEndCoordinates(e.currentTarget);
+
                 if (this.isCellCopied) {
 
                     this.hideContextMenu();
-                    
-                    this.copyCoordinates.fromX = this.selectedCellCoordinates.x;
-                    this.copyCoordinates.toX = this.selectedCellCoordinates.x; 
-                    this.copyCoordinates.fromY = this.selectedCellCoordinates.y;
-                    this.copyCoordinates.toY = this.selectedCellCoordinates.y;
 
-                    this.pasteValuesToSelectedArea();
-                    this.clearPreviouslyCopiedCellsHtml();
-                    this.hideCopyAreaBorder();
+                    //TODO Code duplicate, refactor
+                    
+                    let copiedCellValue = this.getCellByQuerySelectorWithDatasetAttributes(this.selectedCellCoordinates.x, this.selectedCellCoordinates.y).firstChild.innerText
+                    let oldData = [];
+                    const logicToApply = (x, y, row, column) => {
+                        let cell = this.getCellByQuerySelectorWithDatasetAttributes(x, y);
+                        if (cell) {
+                            let innerDiv = cell.firstChild;
+                            oldData.push({
+                                x: x,
+                                y: y,
+                                value: innerDiv.textContent
+                            });
+            
+                            innerDiv.firstChild.textContent = copiedCellValue;
+            
+                            let recordId = innerDiv?.parentElement?.parentElement?.dataset?.recordId;
+                            let fieldName = innerDiv?.parentElement?.dataset?.field;
+                            let value = copiedCellValue;
+            
+                            this.updateRecordsValue(recordId, fieldName, value);
+                        }
+                    };
+
+                    creteSnapshot(oldData);
+                    this.showUndoContextMenuItem();
+
+                    itterateThroughCellsInRangeAndApplyLogic(
+                        this.getSelectedAreaNormalizedCoordinates(), 
+                        logicToApply.bind(this)
+                    );
 
                     this.isCellCopied = false;
                 }
