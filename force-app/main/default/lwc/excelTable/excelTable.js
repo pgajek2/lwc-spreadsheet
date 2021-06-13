@@ -225,7 +225,7 @@ export default class ExcelTable extends LightningElement {
         let previosState = getPreviousState();
         if (previosState && previosState.length > 0) {
             previosState.forEach(cell => {
-                this.getCellByQuerySelectorWithDatasetAttributes(cell.x, cell.y).firstChild.innerText = cell.value;
+                this.getCellByQuerySelectorWithDatasetAttributes(cell.x, cell.y).childNodes[0].textContent = cell.value;
             });
         }
         if (!hasHistory()) {
@@ -428,14 +428,15 @@ export default class ExcelTable extends LightningElement {
         let logicToApply = (x, y, row, column) => {
             let cell = this.getCellByQuerySelectorWithDatasetAttributes(x, y);
             if (cell) {
-                let innerDiv = cell.firstChild;
+                let innerDiv = cell.childNodes[0];
                 oldData.push({
                     x: x,
                     y: y,
                     value: innerDiv.textContent
                 });
 
-                innerDiv.firstChild.textContent = values[row][column];
+                let innerDivContentElement = innerDiv?.childNodes[0] || innerDiv;
+                innerDivContentElement.textContent = values[row][column];
 
                 let recordId = innerDiv?.parentElement?.parentElement?.dataset?.recordId;
                 let fieldName = innerDiv?.parentElement?.dataset?.field;
@@ -474,7 +475,7 @@ export default class ExcelTable extends LightningElement {
 
     applyBulkCellUpdate() {
         
-        let copiedCellValue = this.getCellByQuerySelectorWithDatasetAttributes(this.selectedCellCoordinates.x, this.selectedCellCoordinates.y).firstChild.innerText
+        let copiedCellValue = this.getCellByQuerySelectorWithDatasetAttributes(this.selectedCellCoordinates.x, this.selectedCellCoordinates.y).childNodes[0].textContent;
         let oldData = [];
 
         const logicToApply = (x, y, row, column) => {
@@ -487,7 +488,7 @@ export default class ExcelTable extends LightningElement {
                     value: innerDiv.textContent
                 });
 
-                innerDiv.firstChild.textContent = copiedCellValue;
+                innerDiv.childNodes[0].textContent = copiedCellValue;
 
                 let recordId = innerDiv?.parentElement?.parentElement?.dataset?.recordId;
                 let fieldName = innerDiv?.parentElement?.dataset?.field;
