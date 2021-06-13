@@ -20,6 +20,7 @@ td:hover {
 
 
 .menu-context {
+  z-index: 3;
   padding: 5px 20px;
   background: white;
   position: fixed;
@@ -78,13 +79,14 @@ td[data-selectedcell="true"] {
 }
 
 .cell-action {
+  z-index: 2;
   content: "";
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   background: #1a73e8;
   position: absolute;
-  right: 0;
-  bottom: 0;
+  right: -4px;
+  bottom: -4px;
   display: none;
 }
 

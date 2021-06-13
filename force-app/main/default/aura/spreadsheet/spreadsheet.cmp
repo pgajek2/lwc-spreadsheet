@@ -1,0 +1,13 @@
+<aura:component implements="force:lightningQuickAction,force:hasRecordId,flexipage:availableForAllPageTypes" access="global">
+
+    <aura:attribute name="recordId" type="String" default="{!v.recordId}"/>
+    <aura:attribute name="parentRecordFieldApi" type="String" access="global"/>
+    <aura:attribute name="objectName" type="String" access="global"/>
+    <aura:attribute name="fieldSetName" type="String" access="global"/>
+    <aura:attribute name="showRowNumberColumn" type="Boolean" access="global"/>
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" /> 
+
+    <c:fieldsetDatatable aura:id="fieldsetDatatable" recordId="{!v.recordId}" parentRecordFieldApi="{!v.parentRecordFieldApi}" objectName="{!v.objectName}" fieldSetName="{!v.fieldSetName}" showRowNumberColumn="{!v.showRowNumberColumn}"/>
+
+</aura:component>	

@@ -1,0 +1,6 @@
+<design:component label="Spreadsheet">
+    <design:attribute name="parentRecordFieldApi" label="Parent Record Field API" description="Field API to parent record" />
+    <design:attribute name="objectName" label="Object API Name"/>
+    <design:attribute name="fieldSetName" label="FieldSet API Name" />
+    <design:attribute name="showRowNumberColumn" label="Show Row Number Column" default="false"/>
+</design:component>

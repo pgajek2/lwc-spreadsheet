@@ -81,7 +81,7 @@ export default class ExcelTable extends LightningElement {
         this.hideContextMenu();
         this.hidePasteContextMenuItem();
         this.hideUndoContextMenuItem();
-        document.addEventListener('keypress', this.handleKeypress.bind(this));
+       // window.addEventListener('keypress', this.handleKeypress.bind(this));
         this.isRendered = true;
     }
 
@@ -100,28 +100,9 @@ export default class ExcelTable extends LightningElement {
         setSortedByColumnStyle(this);  //TODO pass only proxy 
     }
 
-    handleResize(e) {
-        console.log('handleResize', e)
-    }
-
     handleKeypress(e) {
-        console.log(e)
-
-        switch (e.which) {
-            case 13: //enter
-                break;
-            default:
-                // if (!this.isStartTyping) {
-
-                //     this.getCellByQuerySelectorWithDatasetAttributes(
-                //         this.selectedCellCoordinates.x, 
-                //         this.selectedCellCoordinates.y
-                //     ).firstChild.focus();
-
-                //     this.isStartTyping = true;
-                // }
-                break;
-        }
+        console.log('handleKeypress')
+        this.isStartTyping = true;
     }
 
     handleCopy(e) { 
@@ -155,7 +136,25 @@ export default class ExcelTable extends LightningElement {
         e.target.focus();
     }
 
+    previousCellValue;
+    handleFocusIn(e) {
+        this.previousCellValue = e.currentTarget.innerText
+    }
+
     handleFocusOut(e) {
+        if (this.isStartTyping) {
+            const oldData = [];
+
+            let { cellXPosition, cellYPosition }  = this.getCellCoordinates(e.currentTarget?.parentElement);
+            oldData.push({
+                x: cellXPosition,
+                y: cellYPosition,
+                value: this.previousCellValue
+            });
+    
+            creteSnapshot(oldData);
+            this.showUndoContextMenuItem();
+        }
         this.isStartTyping = false;
     }
 
@@ -234,6 +233,45 @@ export default class ExcelTable extends LightningElement {
         this.hideContextMenu();
     }
 
+    @api
+    handleCellChange(e) {
+        console.log('handleCellChange', e)
+        this.hideContextMenu();
+
+        this.clearPreviouslySelectedArea();
+        this.clearPreviouslySelectedCell();
+
+        let selectedCellCoordinatesX = this.selectedCellCoordinates.x;
+        let selectedCellCoordinatesY = this.selectedCellCoordinates.y;
+
+        switch (e.which) {
+            case 40: //down
+                selectedCellCoordinatesX += 1;
+                break;
+            case 38: //up
+                selectedCellCoordinatesX -= 1;
+                break;
+            case 39: //right
+                selectedCellCoordinatesY += 1;
+                break;
+            case 37: //left
+                selectedCellCoordinatesY -= 1;
+                break;
+        }
+
+        this.selectedCellCoordinates.x = 0 <= selectedCellCoordinatesX && selectedCellCoordinatesX < this.records.length ? selectedCellCoordinatesX : this.selectedCellCoordinates.x;
+        this.selectedCellCoordinates.y = 0 <= selectedCellCoordinatesY && selectedCellCoordinatesY < this.columns.length ? selectedCellCoordinatesY : this.selectedCellCoordinates.y;
+
+        //this.markSelectedCellHtml(e.currentTarget);
+        let cell = this.template.querySelector(`td[data-row="${this.selectedCellCoordinates.x}"][data-column="${this.selectedCellCoordinates.y}"]`);
+        cell.dataset[SELECTED_CELL_DATASET] = true;
+        cell.childNodes[0].focus();
+
+       // this.startAreaSelection();
+        //this.setSelectedAreaStartCoordinates(e.currentTarget);
+        this.selectedAreaCoordinates.fromX = this.selectedCellCoordinates.x;
+        this.selectedAreaCoordinates.fromY = this.selectedCellCoordinates.y;
+    }
 
     // Selected Cell
 

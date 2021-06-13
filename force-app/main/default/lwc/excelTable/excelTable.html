@@ -30,7 +30,7 @@
                 ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
 
                 <div class="cell" contenteditable role="textbox" ondblclick={handleDoubleClick}
-                  onfocusout={handleFocusOut} oninput={handleCellValueChange} onresize={handleResize}>
+                  onfocusin={handleFocusIn} onfocusout={handleFocusOut} oninput={handleCellValueChange}>
                   {field.value}
                 </div>
 
