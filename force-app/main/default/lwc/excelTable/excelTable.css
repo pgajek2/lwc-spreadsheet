@@ -89,7 +89,7 @@ td[data-selectedcell="true"] {
 }
 
 .cell-action:hover {
-  cursor: pointer;
+  cursor: crosshair;
 }
 
 td[data-selectedcell="true"] .cell-action {
@@ -106,7 +106,7 @@ td[data-selectedcell="true"] .cell-action {
   display: none;
 }
 
-div[data-sorted-by-column="true"] .sort-icon{
+div[data-sorted-by-column="true"] .sort-icon {
   display: block;
 }
 
