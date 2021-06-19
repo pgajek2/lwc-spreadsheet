@@ -1,0 +1,46 @@
+<template>
+    <template if:true={showBulkUpdateModal}>
+
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+
+              <header class="slds-modal__header">
+                <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">Bulk Update</h2>
+              </header>
+
+              <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                <div onkeyup={handleKeyUp}>
+                    <lightning-input
+                        name="enter-search"
+                        label="Search when user hits the 'enter' key"
+                        type="search"
+                    ></lightning-input>
+                </div>
+        
+                {queryTerm}
+
+                <lightning-dual-listbox name="languages"
+                    label="Select Languages"
+                    source-label="Available"
+                    selected-label="Selected"
+                    field-level-help="Select your preferred languages"
+                    options={records}
+                    onchange={handleChange}
+                    max="1"></lightning-dual-listbox>
+                <div class="slds-box" >
+                <p>Selected values are: {selected}</p>
+                </div>
+
+              </div>
+
+              <footer class="slds-modal__footer">
+                <lightning-button label="Cancel" title="Cancel" onclick={handleCancel} icon-position="right" class="slds-m-left_x-small"></lightning-button>
+                <lightning-button variant="brand" label="Save" title="Save" onclick={handleSave} icon-position="right" class="slds-m-left_x-small"></lightning-button>
+              </footer>
+              
+            </div>
+          </section>
+          <div class="slds-backdrop slds-backdrop_open"></div>
+
+    </template>
+</template>

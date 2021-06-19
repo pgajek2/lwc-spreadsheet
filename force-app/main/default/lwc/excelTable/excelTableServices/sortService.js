@@ -39,7 +39,7 @@ const setSortDirectionIcon = (self) => {
 };
 
 const sortBy = (field, reverse) => {
-    const key = x => { return x[field] || "" };
+    const key = x => { return getFieldValue(field, x) || "" };
 
     return (a, b) => {
         a = key(a);
@@ -47,6 +47,17 @@ const sortBy = (field, reverse) => {
         return reverse * ((a > b) - (b > a));
     };
 };
+
+const getFieldValue = (fieldApi, data) => {
+    if (data) {
+        let value = data;
+        fieldApi.split('.').forEach(field => {
+            value = value[field] || '';
+        });
+        return value;
+    }
+    return '';
+}
 
 export {
     setSortedBy,

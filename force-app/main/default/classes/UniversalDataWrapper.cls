@@ -20,13 +20,25 @@ public class UniversalDataWrapper {
         public String fieldName {get; set;}
         @AuraEnabled
         public String type {get; set;}
+        @AuraEnabled
+        public Boolean editable {get; set;}
+        @AuraEnabled
+        public String lookupObject {get; set;}
+        @AuraEnabled
+        public String lookupFieldApi {get; set;}
 
         public Column(String label, 
                       String fieldName, 
-                      String type) {
+                      String type,
+                      Boolean editable,
+                      String lookupObject,
+                      String lookupFieldApi) {
             this.label = label;
             this.fieldName = fieldName;
             this.type = type;
+            this.editable = editable;
+            this.lookupObject = lookupObject;
+            this.lookupFieldApi = lookupFieldApi;
         }
     }
 

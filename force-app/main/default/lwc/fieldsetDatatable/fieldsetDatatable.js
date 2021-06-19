@@ -12,8 +12,12 @@ export default class FieldsetDatatable extends LightningElement {
     @api objectName;
     @api fieldSetName;
     @api showRowNumberColumn;
+    @api lookupObject;
 
     isLoading = false;
+    bulkLookupUpdateConfig = {};
+    disableBulkUpdateButton = true;
+    lookupRecords = [];
 
     columns = [];
     data = [];
@@ -58,17 +62,16 @@ export default class FieldsetDatatable extends LightningElement {
         });
     }
 
-    saveUpdatedData(updatedData) {
+    saveUpdatedData(records, withRefresh) {
         this.showSpinner();
-
-        let records = this.transformUpdatedData(updatedData);
-        
-        console.log(records);
         
         saveRecords({
             records
         }).then(result => {
             this.showSuccessToast();
+            if (withRefresh) {
+                this.getRecordsForObject();
+            }
         }).catch(error => {
             this.showErrorToast(error);
             console.error(error);
@@ -123,14 +126,35 @@ export default class FieldsetDatatable extends LightningElement {
         this.isLoading = false;
     }
 
+    handleBulkUpdateModal() {
+        this.template.querySelector('c-excel-table-bulk-update-modal').showModal();
+    }
+
     handleSave() {
         this.saveUpdatedData(
-            this.template.querySelector('c-excel-table').getEditedData()
+            this.template.querySelector('c-excel-table').getEditedData(),
+            false
         );
     }
 
     handleReset() {
         this.getRecordsForObject();
+    }
+
+    handleBulkUpdate(e) {
+        const recordsToUpdate = this.bulkLookupUpdateConfig.recordsToBulkUpdate.map(record => {
+            return {
+                Id: record,
+                [this.bulkLookupUpdateConfig.lookupField]: e.detail
+            }
+        })
+        this.saveUpdatedData(recordsToUpdate, true);
+    }
+
+    handleAllowBulk(e) {
+        this.disableBulkUpdateButton = false;
+        this.bulkLookupUpdateConfig = e.detail;
+        this.lookupObject = this.bulkLookupUpdateConfig.lookupObject;
     }
 
     handleLoading(e) {

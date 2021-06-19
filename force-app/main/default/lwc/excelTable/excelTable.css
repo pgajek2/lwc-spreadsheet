@@ -94,7 +94,7 @@ td[data-selectedcell="true"] {
   cursor: crosshair;
 }
 
-td[data-selectedcell="true"] .cell-action {
+td[data-selectedcell="true"][data-editable="true"] .cell-action {
   display: block;
 }
 
@@ -110,6 +110,10 @@ td[data-selectedcell="true"] .cell-action {
 
 div[data-sorted-by-column="true"] .sort-icon {
   display: block;
+}
+
+div[data-editable="false"] {
+  background: #9e9e9e;
 }
 
 .column {
