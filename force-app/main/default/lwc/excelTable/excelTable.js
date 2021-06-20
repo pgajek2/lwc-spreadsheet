@@ -4,21 +4,30 @@ import { createUUID } from './excelTableServices/utils';
 import { itterateThroughCellsInRangeAndApplyLogic, getCoordinatesBetweenPoints } from './excelTableServices/cellService';
 import { sortRecordsByField, setSortedByColumnStyle, setSortedBy }  from './excelTableServices/sortService';
 
-const MODES = {
-    AREA_SELECTION: 'AREA_SELECTION',
-    MASS_CELLS_UPDATE: 'MASS_CELLS_UPDATE'
-};
 
 const SELECTED_CELL_DATASET = 'selectedcell';
 const SELECTED_AREA_CELL_DATASET = 'selected';
 export default class ExcelTable extends LightningElement {
 
-    @api showRowNumberColumn = false;	
+    @api showRowNumberColumn = false;
+    @api isLoading = false;	
     
-    _records = [];
-    _orginalRecords = [];
-    _updatedRecords = [];
     _columns = [];
+    _records = [];
+    _updatedRecords = [];
+
+    isAreaSelectionInProgress = false;
+    isCellCopied = false;
+    isStartTyping = false;
+    selectedCellCoordinates = { x: null, y: null }; //cell with blue dashed border
+    selectedAreaCoordinates = { fromX: null, toX: null, fromY: null, toY: null }; //this with blue background
+    copyCoordinates = { fromX: null, toX: null, fromY: null, toY: null };
+
+    contextMenuItems = [
+        { label: 'Copy',  action: 'copy',  icon: 'utility:copy',  class: '',          actionHandler: this.handleCopy.bind(this)  }, 
+        { label: 'Paste', action: 'paste', icon: 'utility:paste', class: 'slds-hide', actionHandler: this.handlePaste.bind(this) },
+        { label: 'Undo',  action: 'undo',  icon: 'utility:undo',  class: 'slds-hide', actionHandler: this.handleUndo.bind(this)  }
+    ];
 
     @api set columns(columns) {
         this._columns = columns;
@@ -29,75 +38,37 @@ export default class ExcelTable extends LightningElement {
     }
 
     @api set records(records) {
-        this._orginalRecords = JSON.parse(JSON.stringify(records));
-
-        this._records = records.map(record => { 
-            return {
-                recordId: record.Id,
-                fields: this.columns.map(column => {
-                    return {
-                        key: createUUID(),
-                        fieldName: column.fieldName,
-                        value: this.getFieldValue(column.fieldName, record) || "",
-                        editable: column?.columnAttributes?.isInlineEditable, 
-                        lookupObject: column?.columnAttributes?.referenceToObjectApi,
-                        lookupFieldApi: column?.columnAttributes?.referenceToFieldApi
-                    }
-                })
-            }
-        })
-    }
-
-    getFieldValue(fieldApi, data) {
-        if (data) {
-            let value = data;
-            fieldApi.split('.').forEach(field => {
-                value = value[field] || '';
-            });
-            return value;
-        }
-        return '';
+        this._records = this.generateUIRecordsStructure(records);
     }
 
     get records() {
         return this._records;
     }
 
-    contextMenuItems = [
-        { label: 'Copy',  action: 'copy',  icon: 'utility:copy',  actionHandler: this.handleCopy.bind(this)  }, 
-        { label: 'Paste', action: 'paste', icon: 'utility:paste', actionHandler: this.handlePaste.bind(this) },
-        { label: 'Undo',  action: 'undo',  icon: 'utility:undo',  actionHandler: this.handleUndo.bind(this)  }
-    ];
-
-    isAreaSelectionInProgress = false;
-    isCellCopied = false;
-    isStartTyping = false;
-    isRendered = false;
-    selectedCellCoordinates = {}; //this with blue border
-    selectedAreaCoordinates = {}; //this with blue background
-    copyCoordinates = {};
-
     @api getEditedData() {
         return this._updatedRecords;
     }
 
-    // getters
-
-    get hasRecords() {
-        return this.records && this.records.length > 0;
+    @api
+    handleNavigationBetweenCells(e) {
+        switch (e.which) {
+            case 40: //arrow down
+                this.setSelectedCell(this.selectedCellCoordinates.x + 1, this.selectedCellCoordinates.y);
+                break;
+            case 38: //arrow up
+                this.setSelectedCell(this.selectedCellCoordinates.x - 1, this.selectedCellCoordinates.y);
+                break;
+            case 39: //arrow right
+                this.setSelectedCell(this.selectedCellCoordinates.x, this.selectedCellCoordinates.y + 1);
+                break;
+            case 37: //arrow left
+                this.setSelectedCell(this.selectedCellCoordinates.x, this.selectedCellCoordinates.y - 1);
+                break;
+        }
     }
 
-    // lifecycle hooks
-
-    renderedCallback() {
-        if (this.isRendered) {
-            return;
-        }
-        this.hideContextMenu();
-        this.hidePasteContextMenuItem();
-        this.hideUndoContextMenuItem();
-       // window.addEventListener('keypress', this.handleKeypress.bind(this));
-        this.isRendered = true;
+    get hasNoRecords() {
+        return (!this.records || !this.records.length) && !this.isLoading;
     }
 
     // handlers 
@@ -115,27 +86,20 @@ export default class ExcelTable extends LightningElement {
         setSortedByColumnStyle(this);  //TODO pass only proxy 
     }
 
-    handleKeypress(e) {
-        this.isStartTyping = true;
-    }
-
     handleCopy(e) { 
         e.preventDefault();
 
-        if (e.target.isContentEditable) {
-            this.hideContextMenu();
-            this.clearPreviouslyCopiedCellsHtml();
-            this.setItemToCopy();
-            this.markCellsAsCopiedWithCssClassAndDatasetProperty();
-            this.addDashedBorderToCopiedArea();
-            this.showPasteOptionInContextMenu();
-        }
+        this.hideContextMenu();
+        this.clearPreviouslyCopiedCellsHtml();
+        this.setItemToCopy();
+        this.markCellsAsCopiedWithCssClassAndDatasetProperty();
+        this.addDashedBorderToCopiedArea();
+        this.showPasteOptionInContextMenu();
     }
 
     handlePaste(e) {
         e.preventDefault(); 
 
-      //  if (e.currentTarget.dataset.editable) {
         this.hideContextMenu();
         this.pasteValuesToSelectedArea();
         this.clearPreviouslyCopiedCellsHtml();
@@ -149,20 +113,26 @@ export default class ExcelTable extends LightningElement {
         this.setContextMenuPosition(e.clientX, e.clientY);
     }
 
-    handleDoubleClick(e) {
-        e.target.focus();
-    }
-
     previousCellValue;
     handleFocusIn(e) {
         this.previousCellValue = e.currentTarget.innerText
     }
 
+    handleCellValueChange(e) {
+        this.isStartTyping = true;
+
+        this.updateRecordsValue(
+            e.currentTarget?.parentElement?.parentElement?.dataset?.recordId, 
+            e.currentTarget?.parentElement?.dataset?.field, 
+            e.currentTarget?.innerText
+        );
+    }
+
     handleFocusOut(e) {
         if (this.isStartTyping) {
             const oldData = [];
+            const { cellXPosition, cellYPosition } = this.getCellCoordinates(e.currentTarget?.parentElement);
 
-            let { cellXPosition, cellYPosition }  = this.getCellCoordinates(e.currentTarget?.parentElement);
             oldData.push({
                 x: cellXPosition,
                 y: cellYPosition,
@@ -170,18 +140,11 @@ export default class ExcelTable extends LightningElement {
             });
     
             creteSnapshot(oldData);
+
             this.showUndoContextMenuItem();
         }
+
         this.isStartTyping = false;
-    }
-
-    handleCellValueChange(e) {
- 
-        let recordId = e.currentTarget?.parentElement?.parentElement?.dataset?.recordId;
-        let fieldName = e.currentTarget?.parentElement?.dataset?.field;
-        let value = e.currentTarget.innerText;
-
-        this.updateRecordsValue(recordId, fieldName, value);
     }
 
     handleDown(e) {
@@ -262,31 +225,33 @@ export default class ExcelTable extends LightningElement {
         this.hideContextMenu();
     }
 
-    @api
-    handleCellChange(e) {
-   //     console.log('handleCellChange', e)
-       
-        let selectedCellCoordinatesX = this.selectedCellCoordinates.x;
-        let selectedCellCoordinatesY = this.selectedCellCoordinates.y;
+    generateUIRecordsStructure(records) {
+        return records.map(record => { 
+            return {
+                recordId: record.Id,
+                fields: this.columns.map(column => {
+                    return {
+                        key: createUUID(),
+                        fieldName: column.fieldName,
+                        value: this.getFieldValue(column.fieldName, record) || "",
+                        editable: column?.columnAttributes?.isInlineEditable, 
+                        lookupObject: column?.columnAttributes?.referenceToObjectApi,
+                        lookupFieldApi: column?.columnAttributes?.referenceToFieldApi
+                    }
+                })
+            }
+        })
+    }
 
-        switch (e.which) {
-            case 40: //down
-                selectedCellCoordinatesX += 1;
-                this.setSelectedCell(selectedCellCoordinatesX, selectedCellCoordinatesY);
-                break;
-            case 38: //up
-                selectedCellCoordinatesX -= 1;4
-                this.setSelectedCell(selectedCellCoordinatesX, selectedCellCoordinatesY);
-                break;
-            case 39: //right
-                selectedCellCoordinatesY += 1;
-                this.setSelectedCell(selectedCellCoordinatesX, selectedCellCoordinatesY);
-                break;
-            case 37: //left
-                selectedCellCoordinatesY -= 1;
-                this.setSelectedCell(selectedCellCoordinatesX, selectedCellCoordinatesY);
-                break;
+    getFieldValue(fieldApi, data) {
+        if (data) {
+            let value = data;
+            fieldApi.split('.').forEach(field => {
+                value = value[field] || '';
+            });
+            return value;
         }
+        return '';
     }
 
     checkIfCanBeBulkUpdate() {
@@ -350,8 +315,10 @@ export default class ExcelTable extends LightningElement {
         cell.dataset[SELECTED_CELL_DATASET] = true;
         cell.childNodes[0].focus();
 
-        this.selectedAreaCoordinates.fromX = this.selectedCellCoordinates.x;
-        this.selectedAreaCoordinates.fromY = this.selectedCellCoordinates.y;
+        this.setSelectedAreaCoordinates({
+            fromX: this.selectedCellCoordinates.x,
+            fromY: this.selectedCellCoordinates.y
+        });
     }
 
     // Selected Cell
@@ -382,27 +349,21 @@ export default class ExcelTable extends LightningElement {
     // Selected Area
 
     setSelectedAreaStartCoordinates(startCell) {
-        let { cellXPosition, cellYPosition } = this.getCellCoordinates(startCell);
-        
-        this.selectedAreaCoordinates.fromX = cellXPosition;
-        this.selectedAreaCoordinates.fromY = cellYPosition;
+        const { cellXPosition: fromX, cellYPosition: fromY } = this.getCellCoordinates(startCell);
+
+        this.setSelectedAreaCoordinates({ fromX, fromY });
     }
 
     setSelectedAreaEndCoordinates(endCell) {
-        let { cellXPosition, cellYPosition } = this.getCellCoordinates(endCell);
+        const { cellXPosition: toX, cellYPosition: toY } = this.getCellCoordinates(endCell);
 
-        this.selectedAreaCoordinates.toX = cellXPosition;
-        this.selectedAreaCoordinates.toY = cellYPosition;
-    }
-
-    cleareSelectedAreaEndCoordinates() {
-        this.selectedAreaCoordinates.toX = null;
-        this.selectedAreaCoordinates.toY = null;
+        this.setSelectedAreaCoordinates({ toX, toY });
     }
 
     clearPreviouslySelectedArea() {
-        this.cleareSelectedAreaEndCoordinates();
         this.removeDatasetFromCellsBetweenRange(SELECTED_AREA_CELL_DATASET);
+
+        this.setSelectedAreaCoordinates({ toX: null, toY: null });
     }
 
     recalculateAndMarkSelectedArea(currentCell) {
@@ -587,11 +548,14 @@ export default class ExcelTable extends LightningElement {
             toY: this.selectedCellCoordinates.y + selectedColumnsSize
         });
 
-        this.selectedAreaCoordinates.fromX = this.selectedCellCoordinates.x;
-        this.selectedAreaCoordinates.toX = this.selectedCellCoordinates.x + selectedRowsSize;
-        this.selectedAreaCoordinates.fromY = this.selectedCellCoordinates.y;
-        this.selectedAreaCoordinates.toY = this.selectedCellCoordinates.y + selectedColumnsSize;
+        this.setSelectedAreaCoordinates({
+            fromX: this.selectedCellCoordinates.x,
+            toX: this.selectedCellCoordinates.x + selectedRowsSize,
+            fromY: this.selectedCellCoordinates.y,
+            toY: this.selectedCellCoordinates.y + selectedColumnsSize
+        })
     }
+
     // General
 
     applyBulkCellUpdate() {
@@ -603,6 +567,7 @@ export default class ExcelTable extends LightningElement {
             let cell = this.getCellByQuerySelectorWithDatasetAttributes(x, y);
             if (cell) {
                 let innerDiv = cell.firstChild;
+
                 oldData.push({
                     x: x,
                     y: y,
@@ -692,6 +657,13 @@ export default class ExcelTable extends LightningElement {
         };
     }
 
+    setSelectedAreaCoordinates(newCoordinates) {
+        this.selectedAreaCoordinates = {
+            ...this.selectedAreaCoordinates,
+            ...newCoordinates
+        };
+    }
+
     getSelectedAreaNormalizedCoordinates() {
         return this.getNormalizedCoordinateSystem(
             this.selectedAreaCoordinates.fromX, 
@@ -711,36 +683,17 @@ export default class ExcelTable extends LightningElement {
     }
 
     updateRecordsValue(recordId, fieldName, value) {
-        this._records.find(record => record.recordId === recordId)
-                     .fields
-                     .find(field => field.fieldName === fieldName)
-                     .value = value;
-        this._orginalRecords.find(record => record.Id === recordId)[fieldName] = value;
         let recordToUpdate = this._updatedRecords.find(record => record.Id === recordId);
+
         if (recordToUpdate) {
             recordToUpdate[fieldName] = value;
-        } else {
-            this._updatedRecords.push({
-                Id: recordId,
-                [fieldName]: value
-            });
-        }
-    }
+            return;
+        } 
 
-    showSpinner() {
-        this.dispatchEvent(
-            new CustomEvent('loading', {
-                detail: true    
-            })
-        );
-    }
-
-    hideSpinner() {
-        this.dispatchEvent(
-            new CustomEvent('loading', {
-                detail: false    
-            })
-        );
+        this._updatedRecords.push({
+            Id: recordId,
+            [fieldName]: value
+        });
     }
 
     fireUnsavedChangesEvent() {

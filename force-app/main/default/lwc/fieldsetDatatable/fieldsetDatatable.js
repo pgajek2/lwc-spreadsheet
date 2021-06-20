@@ -80,7 +80,7 @@ export default class FieldsetDatatable extends LightningElement {
 
     @api
     changeCell(e) {
-        this.template.querySelector('c-excel-table').handleCellChange(e);
+        this.template.querySelector('c-excel-table').handleNavigationBetweenCells(e);
     }
 
     transformUpdatedData(updatedData) {

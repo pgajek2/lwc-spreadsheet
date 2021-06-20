@@ -1,6 +1,8 @@
 <template>
   <div class="excel-table-container">
-    <table style="width:100%" oncontextmenu={handleContextMenu} onkeypress={handleKeyPress} oncopy={handleCopy}
+    <table style="width:100%" 
+      oncontextmenu={handleContextMenu} 
+      oncopy={handleCopy}
       onpaste={handlePaste}>
 
       <!-- Columns -->
@@ -16,7 +18,7 @@
         </template>
       </tr>
 
-      <template if:true={hasRecords}>
+      <template if:false={hasNoRecords}>
         <!-- Rows  -->
         <template for:each={records} for:item="record" for:index="rowIndex">
           <tr key={record.recordId} data-record-id={record.recordId}>
@@ -27,10 +29,15 @@
             <!-- Fieldset row -->
             <template for:each={record.fields} for:item="field" for:index="columnIndex">
               <td key={field.key} data-field={field.fieldName} data-row={rowIndex} data-column={columnIndex} data-editable={field.editable} data-lookup-object={field.lookupObject} data-lookup-field={field.lookupFieldApi}
-                ondblclick={handleDoubleClick} onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
+                onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
 
-                <div class="cell" contenteditable={field.editable} role="textbox" ondblclick={handleDoubleClick}
-                  onfocusin={handleFocusIn} onfocusout={handleFocusOut} oninput={handleCellValueChange}>
+                <div 
+                  class="cell"
+                  role="textbox" 
+                  contenteditable={field.editable} 
+                  onfocusin={handleFocusIn} 
+                  onfocusout={handleFocusOut} 
+                  oninput={handleCellValueChange}>
                   {field.value}
                 </div>
 
@@ -45,7 +52,7 @@
 
 
     <!-- No Records -->
-    <template if:false={hasRecords}>
+    <template if:true={hasNoRecords}>
       <div class="no-records-found">
         No records found.
       </div>
@@ -53,10 +60,17 @@
   </div>
 
   <!-- Context Menu -->
-  <div id="context-menu" class="menu-context">
+  <div id="context-menu" class="menu-context slds-hide">
     <template for:each={contextMenuItems} for:item="contextMenuItem">
-      <lightning-button key={contextMenuItem.action} variant="base" label={contextMenuItem.label}
-        icon-name={contextMenuItem.icon} data-action={contextMenuItem.action} onclick={contextMenuItem.actionHandler}>
+
+      <lightning-button key={contextMenuItem.action} 
+        variant="base" 
+        label={contextMenuItem.label}
+        icon-name={contextMenuItem.icon} 
+        class={contextMenuItem.class}
+        data-action={contextMenuItem.action} 
+        onclick={contextMenuItem.actionHandler}>
+
       </lightning-button>
     </template>
   </div>
