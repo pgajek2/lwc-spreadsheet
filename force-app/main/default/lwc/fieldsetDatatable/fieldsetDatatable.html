@@ -3,7 +3,7 @@
 
     <div class="fieldset-datatable-container">
         <div class="control-buttons">
-            <lightning-button disabled={disableBulkUpdateButton} variant="brand" label="Bulk Update" title="Bulk Update" onclick={handleBulkUpdateModal} icon-name="utility:save" icon-position="right" class="slds-m-left_x-small"></lightning-button>
+            <lightning-button disabled={disableBulkUpdateButton} variant="brand" label="Bulk Update" title="Bulk Update" onclick={handleBulkUpdateModal} icon-name="utility:edit" icon-position="right" class="slds-m-left_x-small"></lightning-button>
             <lightning-button label="Reset" title="Reset" onclick={handleReset} icon-name="utility:refresh" icon-position="right" class="slds-m-left_x-small"></lightning-button>
             <lightning-button variant="brand" label="Save" title="Save" onclick={handleSave} icon-name="utility:save" icon-position="right" class="slds-m-left_x-small"></lightning-button>
         </div>
@@ -13,6 +13,7 @@
             show-row-number-column={showRowNumberColumn}
             onloading={handleLoading}
             onallowbulk={handleAllowBulk}
+            onblockbulk={handleBlockBulk}
         ></c-excel-table>
 
         <c-excel-table-bulk-update-modal show-bulk-update-modal={showBulkUpdateModal} lookup-object={lookupObject} onbulkupdate={handleBulkUpdate}></c-excel-table-bulk-update-modal>

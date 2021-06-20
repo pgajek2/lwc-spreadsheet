@@ -19,23 +19,23 @@
         
                 {queryTerm}
 
-                <lightning-dual-listbox name="languages"
-                    label="Select Languages"
+                <lightning-dual-listbox
+                    label="Select Parent Record"
                     source-label="Available"
                     selected-label="Selected"
-                    field-level-help="Select your preferred languages"
+                    field-level-help="Select parent record for bulk update"
                     options={records}
                     onchange={handleChange}
                     max="1"></lightning-dual-listbox>
                 <div class="slds-box" >
-                <p>Selected values are: {selected}</p>
+                <p>Selected value: {selected}</p>
                 </div>
 
               </div>
 
               <footer class="slds-modal__footer">
                 <lightning-button label="Cancel" title="Cancel" onclick={handleCancel} icon-position="right" class="slds-m-left_x-small"></lightning-button>
-                <lightning-button variant="brand" label="Save" title="Save" onclick={handleSave} icon-position="right" class="slds-m-left_x-small"></lightning-button>
+                <lightning-button variant="brand" label="Save" disabled={disabledSave} title="Save" onclick={handleSave} icon-position="right" class="slds-m-left_x-small"></lightning-button>
               </footer>
               
             </div>

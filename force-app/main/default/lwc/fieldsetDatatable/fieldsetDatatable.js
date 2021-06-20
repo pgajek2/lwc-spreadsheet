@@ -38,7 +38,6 @@ export default class FieldsetDatatable extends LightningElement {
             fieldSetName: this.fieldSetName
         }).then(result => {
             this.data = result;
-            console.log(this.data)
         }).catch(error => {
             console.error(error);
         }).finally(() => {
@@ -54,7 +53,6 @@ export default class FieldsetDatatable extends LightningElement {
             fieldSetName: this.fieldSetName
         }).then(result => {
             this.columns = result;
-            console.log(this.columns)
         }).catch(error => {
             console.error(error);
         }).finally(() => {
@@ -155,6 +153,10 @@ export default class FieldsetDatatable extends LightningElement {
         this.disableBulkUpdateButton = false;
         this.bulkLookupUpdateConfig = e.detail;
         this.lookupObject = this.bulkLookupUpdateConfig.lookupObject;
+    }
+
+    handleBlockBulk() {
+        this.disableBulkUpdateButton = true;
     }
 
     handleLoading(e) {

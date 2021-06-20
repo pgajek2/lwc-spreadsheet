@@ -13,10 +13,17 @@ export default class ExcelTableBulkUpdateModal extends LightningElement {
 
     @api showModal() {
         this.showBulkUpdateModal = true;
+        this.records = [];
+        this._selected = [];
+        this.queryTerm = null;
     }
     
     get selected() {
         return this._selected.length ? this._selected : 'none';
+    }
+
+    get disabledSave() {
+        return this.selected === 'none';
     }
 
     getRecordsListApex() {
@@ -24,7 +31,6 @@ export default class ExcelTableBulkUpdateModal extends LightningElement {
             objectName: this.lookupObject,
             recordName: this.queryTerm
         }).then(result => {
-            console.log(result);
             this.records = result && result.length ? result.map(record => {
                 return {
                     label: record.Name,
@@ -50,7 +56,6 @@ export default class ExcelTableBulkUpdateModal extends LightningElement {
 
     handleChange(e) {
         this._selected = e.detail.value;
-        console.log(this._selected)
     }
 
     handleSave() {

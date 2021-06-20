@@ -330,6 +330,10 @@ export default class ExcelTable extends LightningElement {
                     }
                 })
             );
+        } else {
+            this.dispatchEvent(
+                new CustomEvent('blockbulk')
+            );
         }
     }
     
