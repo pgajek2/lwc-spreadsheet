@@ -39,9 +39,9 @@ export default class ExcelTable extends LightningElement {
                         key: createUUID(),
                         fieldName: column.fieldName,
                         value: this.getFieldValue(column.fieldName, record) || "",
-                        editable: column.editable, 
-                        lookupObject: column.lookupObject,
-                        lookupFieldApi: column.lookupFieldApi
+                        editable: column?.columnAttributes?.isInlineEditable, 
+                        lookupObject: column?.columnAttributes?.referenceToObjectApi,
+                        lookupFieldApi: column?.columnAttributes?.referenceToFieldApi
                     }
                 })
             }

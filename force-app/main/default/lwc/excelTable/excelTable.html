@@ -8,7 +8,7 @@
         <th if:true={showRowNumberColumn}></th>
         <template for:each={columns} for:item="column">
           <th key={column.fieldName} class="column">
-            <div class="resize-column" ondblclick={handleColumnSortClick} data-field={column.fieldName} data-editable={column.editable}>
+            <div class="resize-column" ondblclick={handleColumnSortClick} data-field={column.fieldName} data-editable={column.columnAttributes.isInlineEditable}>
               {column.label}
               <lightning-icon class="sort-icon" icon-name="utility:arrowdown" data-arrow-field={column.fieldName} alternative-text="Connected" size="x-small"></lightning-icon>
             </div>

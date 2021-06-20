@@ -1,17 +1,4 @@
 public class UniversalDataWrapper {
-    
-    public UniversalDataWrapper() {
-        this.columns = new List<Column>();
-        this.data = new List<Data>();
-        this.keyField = 'Id';
-    }
-
-    @AuraEnabled
-    public List<Column> columns {get; set;}
-    @AuraEnabled
-    public List<Data> data {get; set;}
-    @AuraEnabled
-    public String keyField {get; set;}
 
     public class Column {
         @AuraEnabled
@@ -21,24 +8,33 @@ public class UniversalDataWrapper {
         @AuraEnabled
         public String type {get; set;}
         @AuraEnabled
-        public Boolean editable {get; set;}
-        @AuraEnabled
-        public String lookupObject {get; set;}
-        @AuraEnabled
-        public String lookupFieldApi {get; set;}
+        public ColumnAttributes columnAttributes {get; set;}
 
         public Column(String label, 
                       String fieldName, 
                       String type,
-                      Boolean editable,
-                      String lookupObject,
-                      String lookupFieldApi) {
+                      ColumnAttributes columnAttributes) {
             this.label = label;
             this.fieldName = fieldName;
             this.type = type;
-            this.editable = editable;
-            this.lookupObject = lookupObject;
-            this.lookupFieldApi = lookupFieldApi;
+            this.columnAttributes = columnAttributes;
+        }
+    }
+
+    public class ColumnAttributes {
+        @AuraEnabled
+        public Boolean isInlineEditable {get; set;}
+        @AuraEnabled
+        public String referenceToObjectApi {get; set;}
+        @AuraEnabled
+        public String referenceToFieldApi {get; set;}
+
+        public ColumnAttributes(Boolean isInlineEditable,
+                                String referenceToObjectApi,
+                                String referenceToFieldApi) {
+            this.isInlineEditable = isInlineEditable;
+            this.referenceToObjectApi = referenceToObjectApi;
+            this.referenceToFieldApi = referenceToFieldApi;
         }
     }
 

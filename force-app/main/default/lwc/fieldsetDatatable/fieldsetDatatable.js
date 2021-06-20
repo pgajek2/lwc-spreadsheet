@@ -103,7 +103,7 @@ export default class FieldsetDatatable extends LightningElement {
     }
 
     showErrorToast(error) {
-        this.showNotification('Error', `Unexpected Error: ${error}`, 'error');
+        this.showNotification('Error', `Unexpected Error: ${error?.body?.message || 'Unexpected error!'}`, 'error');
     }
 
     showNotification(title, message, variant) {
