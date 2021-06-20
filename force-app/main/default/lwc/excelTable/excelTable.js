@@ -498,62 +498,51 @@ export default class ExcelTable extends LightningElement {
     // Paste
 
     pasteValuesToSelectedArea() {
-        let transformedCopyCoordinates = this.getCopiedAreaNormalizedCoordinates();
-        let values = this.getValuesBetweemRange(transformedCopyCoordinates);
+        const COPY_COORDINATES = this.getCopiedAreaNormalizedCoordinates();
+        const COPY_AREA_VALUES = this.getvaluesBetweenRange(COPY_COORDINATES);
 
-        let selectedRowsSize = transformedCopyCoordinates.toX - transformedCopyCoordinates.fromX;
-        let selectedColumnsSize = transformedCopyCoordinates.toY - transformedCopyCoordinates.fromY;
+        const PREVIOUS_AREA_VALUES = [];
 
-        let oldData = [];
-        let logicToApply = (x, y, row, column) => {
+        const logicToApply = (x, y, row, column) => {
             let cell = this.getCellByQuerySelectorWithDatasetAttributes(x, y);
+
             if (cell) {
                 let innerDiv = cell.childNodes[0];
+
                 if (innerDiv.isContentEditable) {
-                    oldData.push({
-                        x: x,
-                        y: y,
-                        value: innerDiv.textContent
+
+                    PREVIOUS_AREA_VALUES.push({
+                        x, y,value: innerDiv.textContent
                     });
+
+                    (innerDiv?.childNodes[0] || innerDiv).textContent = COPY_AREA_VALUES[row][column];
     
-                    let innerDivContentElement = innerDiv?.childNodes[0] || innerDiv;
-                    innerDivContentElement.textContent = values[row][column];
-    
-                    let recordId = innerDiv?.parentElement?.parentElement?.dataset?.recordId;
-                    let fieldName = innerDiv?.parentElement?.dataset?.field;
-                    let value = values[row][column];
-    
-                    this.updateRecordsValue(recordId, fieldName, value);
+                    const { recordId, fieldName } = this.getCellProperties(innerDiv);
+
+                    this.updateRecordsValue(recordId, fieldName, COPY_AREA_VALUES[row][column]);
                 }
             }
         };
 
-        creteSnapshot(oldData);
+        creteSnapshot(PREVIOUS_AREA_VALUES);
+
         this.showUndoContextMenuItem();
 
+        const ROWS_SIZE = COPY_COORDINATES.toX - COPY_COORDINATES.fromX;
+        const COLUMNS_SIZE = COPY_COORDINATES.toY - COPY_COORDINATES.fromY;
+
+        const fromX = this.selectedCellCoordinates.x;
+        const toX = this.selectedCellCoordinates.x + ROWS_SIZE;
+        const fromY = this.selectedCellCoordinates.y;
+        const toY = this.selectedCellCoordinates.y + COLUMNS_SIZE;
+
         itterateThroughCellsInRangeAndApplyLogic(
-            {
-                fromX: this.selectedCellCoordinates.x,
-                toX: this.selectedCellCoordinates.x + selectedRowsSize,
-                fromY: this.selectedCellCoordinates.y, 
-                toY: this.selectedCellCoordinates.y + selectedColumnsSize
-            }, 
+            { fromX, toX, fromY, toY }, 
             logicToApply.bind(this)
         );
 
-        this.markAreaCellsBetweenCoordinates({
-            fromX: this.selectedCellCoordinates.x,
-            toX: this.selectedCellCoordinates.x + selectedRowsSize,
-            fromY: this.selectedCellCoordinates.y,
-            toY: this.selectedCellCoordinates.y + selectedColumnsSize
-        });
-
-        this.setSelectedAreaCoordinates({
-            fromX: this.selectedCellCoordinates.x,
-            toX: this.selectedCellCoordinates.x + selectedRowsSize,
-            fromY: this.selectedCellCoordinates.y,
-            toY: this.selectedCellCoordinates.y + selectedColumnsSize
-        })
+        this.markAreaCellsBetweenCoordinates({ fromX, toX, fromY, toY });
+        this.setSelectedAreaCoordinates({ fromX, toX, fromY, toY });
     }
 
     // General
@@ -576,11 +565,9 @@ export default class ExcelTable extends LightningElement {
 
                 innerDiv.childNodes[0].textContent = copiedCellValue;
 
-                let recordId = innerDiv?.parentElement?.parentElement?.dataset?.recordId;
-                let fieldName = innerDiv?.parentElement?.dataset?.field;
-                let value = copiedCellValue;
+                const { recordId, fieldName } = this.getCellProperties(innerDiv);
 
-                this.updateRecordsValue(recordId, fieldName, value);
+                this.updateRecordsValue(recordId, fieldName, copiedCellValue);
             }
         };
 
@@ -593,7 +580,7 @@ export default class ExcelTable extends LightningElement {
         );
     }
 
-    getValuesBetweemRange({fromX, toX, fromY, toY}) {
+    getvaluesBetweenRange({fromX, toX, fromY, toY}) {
         let values = [];
 
         let logicToApply = (x, y, xIndex, yIndex) => {
@@ -644,6 +631,14 @@ export default class ExcelTable extends LightningElement {
                 cell.dataset[datasetPropertyToClear] = false;
             });
         }
+    }
+
+    getCellProperties(tdInnerDivCell) {
+        return {
+            recordId: tdInnerDivCell?.parentElement?.parentElement?.dataset?.recordId,
+            fieldName: tdInnerDivCell?.parentElement?.dataset?.field,
+            value: tdInnerDivCell?.innerText
+        };
     }
 
     getCellByQuerySelectorWithDatasetAttributes(x, y) {
