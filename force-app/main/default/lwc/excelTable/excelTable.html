@@ -28,7 +28,7 @@
             </td>
             <!-- Fieldset row -->
             <template for:each={record.fields} for:item="field" for:index="columnIndex">
-              <td key={field.key} data-field={field.fieldName} data-row={rowIndex} data-column={columnIndex} data-editable={field.editable} data-lookup-object={field.lookupObject} data-lookup-field={field.lookupFieldApi}
+              <td key={field.key} data-field={field.fieldName} data-value={field.fieldId} data-row={rowIndex} data-column={columnIndex} data-editable={field.editable} data-lookup-object={field.lookupObject} data-lookup-field={field.lookupFieldApi}
                 onmouseover={handleOver} onmouseup={handleUp} onmousedown={handleDown}>
 
                 <div 
@@ -37,7 +37,8 @@
                   contenteditable={field.editable} 
                   onfocusin={handleFocusIn} 
                   onfocusout={handleFocusOut} 
-                  oninput={handleCellValueChange}>
+                  oninput={handleCellValueChange}
+                  ondblclick={handleDoubleClick}>
                   {field.value}
                 </div>
 

@@ -3,17 +3,18 @@ import { creteSnapshot, getPreviousState, hasHistory } from './excelTableService
 import { createUUID } from './excelTableServices/utils';
 import { itterateThroughCellsInRangeAndApplyLogic, getCoordinatesBetweenPoints } from './excelTableServices/cellService';
 import { sortRecordsByField, setSortedByColumnStyle, setSortedBy }  from './excelTableServices/sortService';
-
+import { NavigationMixin } from 'lightning/navigation';
 
 const SELECTED_CELL_DATASET = 'selectedcell';
 const SELECTED_AREA_CELL_DATASET = 'selected';
-export default class ExcelTable extends LightningElement {
+export default class ExcelTable extends NavigationMixin(LightningElement) {
 
     @api showRowNumberColumn = false;
     @api isLoading = false;	
     
     _columns = [];
     _records = [];
+    _orginalRecords = [];
     _updatedRecords = [];
 
     isAreaSelectionInProgress = false;
@@ -38,6 +39,7 @@ export default class ExcelTable extends LightningElement {
     }
 
     @api set records(records) {
+        this._orginalRecords = JSON.parse(JSON.stringify(records));
         this._records = this.generateUIRecordsStructure(records);
     }
 
@@ -73,9 +75,22 @@ export default class ExcelTable extends LightningElement {
 
     // handlers 
 
+    handleDoubleClick(e) {
+        const recordId = e.currentTarget.parentElement.dataset.value;
+
+        if (recordId) {
+            this[NavigationMixin.Navigate]({
+                type: 'standard__recordPage',
+                attributes: {
+                    recordId,
+                    actionName: 'view'
+                }
+            });
+        }
+    }
+
     handleCellActionKeyDown(e) {
         this.isCellCopied = true;
-
     }
 
     handleColumnSortClick(event) {
@@ -233,7 +248,8 @@ export default class ExcelTable extends LightningElement {
                     return {
                         key: createUUID(),
                         fieldName: column.fieldName,
-                        value: this.getFieldValue(column.fieldName, record) || "",
+                        value: this.getFieldValue(column.fieldName, record) || "", //rename it to label
+                        fieldId: this.getFieldValue(column?.columnAttributes?.referenceToFieldApi, record),
                         editable: column?.columnAttributes?.isInlineEditable, 
                         lookupObject: column?.columnAttributes?.referenceToObjectApi,
                         lookupFieldApi: column?.columnAttributes?.referenceToFieldApi
@@ -244,7 +260,7 @@ export default class ExcelTable extends LightningElement {
     }
 
     getFieldValue(fieldApi, data) {
-        if (data) {
+        if (fieldApi && data) {
             let value = data;
             fieldApi.split('.').forEach(field => {
                 value = value[field] || '';
@@ -563,7 +579,7 @@ export default class ExcelTable extends LightningElement {
                     value: innerDiv.textContent
                 });
 
-                innerDiv.childNodes[0].textContent = copiedCellValue;
+                (innerDiv?.childNodes[0] || innerDiv).textContent = copiedCellValue;
 
                 const { recordId, fieldName } = this.getCellProperties(innerDiv);
 
@@ -678,6 +694,7 @@ export default class ExcelTable extends LightningElement {
     }
 
     updateRecordsValue(recordId, fieldName, value) {
+        this._orginalRecords.find(record => record.Id === recordId)[fieldName] = value;
         let recordToUpdate = this._updatedRecords.find(record => record.Id === recordId);
 
         if (recordToUpdate) {

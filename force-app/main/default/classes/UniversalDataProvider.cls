@@ -55,7 +55,14 @@ public with sharing class UniversalDataProvider {
         String query = 'SELECT ';
 
         for (Schema.FieldSetMember field : getFieldSetFieldsForObject(objectName, fieldSetName)) {
-            query += getFieldToQueryConfiguration(field).get('fieldQueryPath') + ', ';
+
+            Map<String, String> fieldSetting = getFieldToQueryConfiguration(field);
+
+            query += fieldSetting.get('fieldQueryPath') + ', ';
+
+            if (fieldSetting.get('fieldApiName')) {
+                query += fieldSetting.get('fieldApiName') + ', '; 
+            }
         }
 
         query += 'Id FROM ' + objectName;
